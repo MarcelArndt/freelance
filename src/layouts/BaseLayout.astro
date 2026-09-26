@@ -1,0 +1,46 @@
+---
+import "../styles/variables.css";
+import "../styles/fonts.css";
+import "../styles/styles.css";
+import Header from "../components/HeaderComponent.astro";
+import Toaster from "../components/ToasterComponent.astro"
+import Footer from "../components/Footer-Component.astro"
+
+const { pageTitle, description } = Astro.props;
+---
+
+<html lang="de">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{pageTitle}</title>
+		{description && <meta name="description" content={description} />}
+		{/* Läuft blockierend vor dem ersten Paint. Startzustände von
+		    Intro-Animationen hängen an html.js – ohne JavaScript bleibt
+		    dadurch nichts unsichtbar. */}
+		<script is:inline>
+			document.documentElement.classList.add("js");
+			// Sicherheitsnetz: meldet sich nach 4s kein Animations-Script mit
+			// data-animations-ready, werden die versteckten Startzustände
+			// aufgehoben. Greift, wenn ein Bundle gar nicht erst lädt.
+			setTimeout(function () {
+				if (!document.documentElement.hasAttribute("data-animations-ready")) {
+					document.documentElement.classList.remove("js");
+				}
+			}, 4000);
+		</script>
+	</head>
+	<body>
+		<Header/>
+		<Toaster/>
+		<div class="main-wrapper">
+			<div class="content-wrapper">
+				<slot />
+				<Footer />
+			</div>
+		</div>
+	</body>
+</html>

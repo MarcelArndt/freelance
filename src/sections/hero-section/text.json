@@ -1,0 +1,11 @@
+{
+    "subline":"Freelance Frontend & Backend Entwickler",
+    "title":"Schnell. Mobil. Sauber.",
+    "text": "Ich baue individuelle Websites mit Astro für kleine und mittlere Unternehmen. Kein Baukasten, kein Plugin-Ballast und nur der Code, den deine Seite wirklich braucht.",
+    "buttonCTA": "Projekt anfragen",
+    "buttonInfo": "Projekt anfragen",
+    "stats": [
+        { "value": "100 %", "label": "Lighthouse Performance" },
+        { "value": "< 50 kB", "label": "JavaScript im Standardfall" }
+    ]
+}

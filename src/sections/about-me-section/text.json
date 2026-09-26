@@ -1,0 +1,12 @@
+{
+	"subtitle": "Über mich",
+	"title": "Eine Person, die entwirft und entwickelt",
+	"text": "Ich bin Marcel, Frontend- und Backend-Entwickler aus Deutschland. Ich verbinde gestalterische Präzision mit technischer Logik — du sprichst also mit derselben Person über Layout, Performance und Serverzugänge.",
+	"textSecondary": "Vorher habe ich Projekte in Angular, Svelte und Django gebaut. Was bleibt: kurze Wege, ehrliche Einschätzungen und Seiten, die auch in zwei Jahren noch wartbar sind.",
+	"image": {
+		"src": "/assets/images/about-me/potrait.webp",
+		"alt": "Marcel Arndt, Freelance Web-Entwickler",
+		"width": 798,
+		"height": 935
+	}
+}

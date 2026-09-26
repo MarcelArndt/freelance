@@ -1,0 +1,160 @@
+---
+import IconsComponent from "./IconsComponent.astro";
+
+/**
+ * Eigene Checkbox statt der Browser-Variante: das echte `<input>` bleibt im
+ * Markup (Tastatur, Formular, Validator), ist aber optisch versteckt – sichtbar
+ * ist das gestylte Kästchen daneben.
+ *
+ * Wie beim InputComponent hängt der Zustand am `[data-field]`-Container, den
+ * der `FormValidator` beschreibt.
+ */
+export interface Props {
+	name: string;
+	/** Regelliste für den Validator – für Pflicht-Häkchen "checked". */
+	validate?: string;
+	checked?: boolean;
+	value?: string;
+	id?: string;
+	/** Größe des Kästchens. */
+	size?: string;
+	class?: string;
+}
+
+const {
+	name,
+	validate,
+	checked = false,
+	value = "ja",
+	id = `field-${name}`,
+	size = "22px",
+	class: className,
+}: Props = Astro.props;
+
+// Konfiguration über einen inline gebauten varStyle-String, wie in den
+// übrigen Components.
+const varStyle = `--checkbox-size:${size}`;
+---
+
+<div class:list={["checkbox", className]} style={varStyle} data-field>
+	<label class="checkbox__row" for={id}>
+		<input
+			class="checkbox__input"
+			type="checkbox"
+			id={id}
+			name={name}
+			value={value}
+			checked={checked}
+			data-validate={validate}
+		/>
+
+		<span class="checkbox__box" aria-hidden="true">
+			<IconsComponent src="/assets/svgs/form/check.svg" size="70%" class="checkbox__icon" />
+		</span>
+
+		<span class="checkbox__label"><slot /></span>
+	</label>
+
+	<p class="checkbox__error" data-field-error aria-live="polite"></p>
+</div>
+
+<style>
+	.checkbox {
+		--checkbox-line: var(--line-color-darker);
+		--checkbox-fill: transparent;
+		--checkbox-mark: transparent;
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+		width: 100%;
+	}
+
+	/* Ungültig heißt hier: Pflichthaken fehlt – der Rahmen wird rot. Grün
+	   braucht es nicht, das gesetzte Häkchen ist Bestätigung genug. */
+	.checkbox[data-state="invalid"] {
+		--checkbox-line: var(--error-color);
+	}
+
+	.checkbox__row {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		cursor: pointer;
+	}
+
+	/* Das echte Input bleibt bedienbar und fokussierbar, liegt aber
+	   unsichtbar unter dem Kästchen. `display:none` würde es aus der
+	   Tab-Reihenfolge werfen. */
+	.checkbox__input {
+		position: absolute;
+		width: var(--checkbox-size);
+		height: var(--checkbox-size);
+		margin: 0;
+		opacity: 0;
+		cursor: pointer;
+	}
+
+	.checkbox__box {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: var(--checkbox-size);
+		height: var(--checkbox-size);
+		margin-top: 0.15em;
+		box-sizing: border-box;
+		border: var(--line-thickness) solid var(--checkbox-line);
+		border-radius: 4px;
+		background-color: var(--checkbox-fill);
+		color: var(--checkbox-mark);
+		transition: background-color 0.25s ease-in-out, border-color 0.25s ease-in-out,
+			color 0.25s ease-in-out;
+	}
+
+	.checkbox__input:checked + .checkbox__box {
+		--checkbox-line: var(--accent);
+		--checkbox-fill: var(--accent);
+		--checkbox-mark: #ffffff;
+	}
+
+	.checkbox__row:hover .checkbox__box {
+		border-color: var(--accent);
+	}
+
+	.checkbox__input:focus-visible + .checkbox__box {
+		outline: 2px solid var(--accent);
+		outline-offset: 2px;
+	}
+
+	.checkbox__label {
+		font-family: var(--font);
+		font-size: var(--p-sm);
+		font-weight: 300;
+		line-height: 1.5;
+		color: var(--ink-4);
+	}
+
+	/* Der Datenschutz-Link kommt per Slot herein und trägt damit die Scope-ID
+	   des Aufrufers – deshalb :global(). */
+	.checkbox__label :global(a) {
+		color: var(--accent);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	.checkbox__error {
+		margin: 0;
+		min-height: 1.2em;
+		padding-left: calc(var(--checkbox-size) + 0.75rem);
+		font-family: var(--font);
+		font-size: var(--p-xs);
+		line-height: 1.2;
+		color: var(--error-color);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.checkbox__box {
+			transition-duration: 1ms;
+		}
+	}
+</style>

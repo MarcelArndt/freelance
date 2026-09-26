@@ -1,0 +1,42 @@
+{
+	"subtitle": "Leistungen",
+	"title": "Was ich für dich baue",
+	"cards": [
+		{
+			"icon": "/assets/svgs/what-i-build/individuell.svg",
+			"title": "Individuelle Landingpages",
+			"text": "Vom Wireframe bis zum Livegang. Layout, Typografie und Struktur auf dein Angebot zugeschnitten — kein Template, das man wiedererkennt."
+		},
+		{
+			"icon": "/assets/svgs/what-i-build/component.svg",
+			"title": "Komponenten-Entwicklung",
+			"text": "Wiederverwendbare Bausteine für Teams: Slider, Konfiguratoren, Buchungsmasken — sauber dokumentiert in Astro, Svelte oder Angular."
+		},
+		{
+			"icon": "/assets/svgs/what-i-build/tempo.svg",
+			"title": "Tempo & Core Web Vitals",
+			"text": "Bilder, Schriften und Skripte so ausgeliefert, dass die Seite in unter einer Sekunde steht — auch mobil im gedrosselten Netz."
+		},
+		{
+			"icon": "/assets/svgs/what-i-build/animation.svg",
+			"title": "Scroll-Animationen",
+			"text": "Dezente GSAP-Reveals, die Inhalte führen statt ablenken — und die Ladezeit nicht auffressen."
+		},
+		{
+			"icon": "/assets/svgs/what-i-build/contact.svg",
+			"title": "Kontaktformulare & Backend",
+			"text": "Formulare mit echter Validierung, Spam-Schutz und Mailversand. Bei Bedarf mit Django-Backend und eigener Datenbank."
+		},
+		{
+			"icon": "/assets/svgs/what-i-build/deployed.svg",
+			"title": "Hosting- & Deploy-Setup",
+			"text": "Domain, SSL, automatisches Deployment per Git. Du bekommst Zugänge und eine kurze Anleitung — keine Blackbox."
+		}
+	],
+	"contactCard": {
+		"title": "Etwas anderes im Kopf?",
+		"text": "Schreib mir kurz, was du vorhast. Wenn ich nicht der Richtige bin, sage ich es dir direkt.",
+		"linkLabel": "Kurz anfragen",
+		"href": "#kontakt"
+	}
+}

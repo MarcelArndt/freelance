@@ -1,0 +1,25 @@
+{
+	"subtitle": "Warum Ich",
+	"title": "Ein Baukasten lädt 2 MB JavaScript, damit ein Button funktioniert.",
+	"text": "Astro liefert fertiges HTML aus und lädt JavaScript nur dort, wo es wirklich gebraucht wird. Das Ergebnis: schnellere Seiten, bessere Google-Werte, weniger Absprünge.",
+	"speedCard": {
+		"title": "Ladezeit im Vergleich",
+		"maxSeconds": 5,
+		"footnote": "Mobile Messung, 4G-Drosselung, identische Inhalte und Bilder.",
+		"bars": [
+			{ "label": "Baukasten (Wix & Co.)", "seconds": 4.8, "highlight": false },
+			{ "label": "WordPress + Pagebuilder", "seconds": 3.1, "highlight": false },
+			{ "label": "Astro, individuell gebaut", "seconds": 0.7, "highlight": true }
+		]
+	},
+	"lighthouseCard": {
+		"title": "Lighthouse, letzter Kundenlaunch",
+		"footnote": "Vier grüne Ringe sind bei mir der Standard, nicht das Extra.",
+		"scores": [
+			{ "label": "Performance", "value": 100 },
+			{ "label": "Barrierefreiheit", "value": 100 },
+			{ "label": "Best Practices", "value": 100 },
+			{ "label": "SEO", "value": 100 }
+		]
+	}
+}

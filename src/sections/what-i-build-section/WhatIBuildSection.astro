@@ -1,0 +1,146 @@
+---
+import CardComponent from "../../components/CardComponent.astro";
+import GridCardComponent from "../../components/GridCardComponent.astro";
+import content from "./text.json";
+import RampCurtainComponent from "../../components/RampCurtainComponent.astro";
+
+export interface Props {
+	title?: string;
+	subtitle?: string;
+}
+
+const { title = content.title, subtitle = content.subtitle }: Props = Astro.props;
+
+const { cards, contactCard } = content;
+---
+
+<script>
+	import { gsap } from "../../lib/gsap";
+
+	function init() {
+		// GSAP ist geladen – das Sicherheitsnetz im BaseLayout darf die
+		// Startzustände jetzt stehen lassen.
+		document.documentElement.setAttribute("data-animations-ready", "");
+		playCardReveal();
+	}
+
+	init();
+
+	/**
+	 * Die Karten steigen nacheinander von unten ein, am Scrollstand entlang.
+	 * Bei prefers-reduced-motion läuft gar nichts – die Karten stehen dann
+	 * einfach fertig da, weil ohne .from() nie ein Startzustand gesetzt wird.
+	 */
+	function playCardReveal() {
+		const grid = document.querySelector<HTMLElement>(".build__cards");
+		const cards = grid?.querySelectorAll<HTMLElement>(".card");
+		if (!grid || !cards?.length) return;
+
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			return;
+		}
+
+		const cardTl = gsap.timeline({
+			scrollTrigger: {
+				trigger: grid,
+				start: "top 80%",
+				end: "bottom bottom",
+				scrub: 0.5,
+			},
+		});
+
+		/**
+		 * Bei scrub zählen nur die Verhältnisse: die Gesamtlänge der Timeline
+		 * wird auf die Scrollstrecke gestreckt. duration und stagger müssen
+		 * deshalb in derselben Größenordnung liegen – ist der stagger deutlich
+		 * größer, bekommt die letzte Karte nur noch einen Bruchteil der Strecke.
+		 * ease "none", weil die Kurve sonst gegen den Scrub arbeitet.
+
+		 * GSAP schreibt während des Tweens ein inline transform auf die Karte
+		 * und setzt dabei translate/scale/rotate auf "none" – der Hover wäre
+		 * damit tot, weil inline das CSS schlägt. clearProps gibt die Karte am
+		 * Ende ans CSS zurück, das translate: none inklusive. Scrollt man wieder
+		 * hoch, übernimmt GSAP erneut und räumt beim nächsten Erreichen des
+		 * Endes erneut auf.
+		 */
+		const handOverToCss = () => gsap.set(cards, { clearProps: "transform,opacity" });
+
+		cardTl.from(cards, {
+			opacity: 0,
+			y:"+=150px",
+			duration: 1,
+			stagger: 0.25,
+			ease: "none",
+			onComplete: handOverToCss,
+		});
+
+		// Puffer am Ende: die letzte Karte ist dadurch bei ~80 % der
+		// Scrollstrecke fertig und nicht erst am allerletzten Pixel.
+		cardTl.to({}, { duration: 0.75 });
+	}
+</script>
+
+<section class="build bg-grey" id="offer">
+	<RampCurtainComponent color="#fff"></RampCurtainComponent>
+	<div class="inner-content-wrapper">
+		<div class="build__content">
+			<p class="subline">{subtitle}</p>
+			<h2 class="build__title">{title}</h2>
+
+			<GridCardComponent class="build__cards" columns={4} columnsTablet={2} columnsMobile={1}>
+				{
+					cards.map((card) => (
+
+							<CardComponent icon={card.icon} title={card.title} text={card.text} />
+
+						
+					))
+				}
+
+				{/* Die dunkle Karte hebt sich nicht an – hier reagiert nur der Link. */}
+				<CardComponent
+					variant="dark"
+					hover={false}
+					title={contactCard.title}
+					text={contactCard.text}
+					href={contactCard.href}
+					linkLabel={contactCard.linkLabel}
+				/>
+			</GridCardComponent>
+		</div>
+	</div>
+</section>
+
+<style>
+	.build {
+		width: 100%;
+		display: flex;
+		justify-content: center;
+		position: relative;
+		box-sizing: border-box;
+		padding-bottom: 60px;
+	}
+
+	.build__content {
+		width: 100%;
+		max-width: var(--max-page-width);
+		padding: clamp(3rem, 10vw, 6rem) 0px;
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+
+	.build__title {
+		margin: 0;
+		font-size: var(--h2);
+		line-height: 1.1;
+		color: #2b0713;
+	}
+
+	.build :global(.build__cards) {
+		margin-top: clamp(2rem, 4vw, 3rem);
+	}
+
+</style>

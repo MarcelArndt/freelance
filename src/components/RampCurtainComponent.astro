@@ -1,0 +1,33 @@
+---
+export interface Props {
+    color?:string,
+    height?:string
+}
+
+const {
+	color = "#fff",
+    height = "60px",
+}: Props = Astro.props;
+
+const varStyle = [
+	`--color:${color}`,
+    `--height:${height}`
+].join(";");
+---
+
+<div class="curtain" style={varStyle}></div>
+
+<style>
+	.curtain {
+		width: 100%;
+		background-color: var(--color);
+		height: var(--height);
+		clip-path: polygon(0% 100%, 100% 100%, 100% 0%);
+        position: absolute;
+        z-index: 20;
+        bottom: 0px;
+		left: 0px;
+		border-bottom: 3px solid var(--color);
+		outline: 3px solid var(--color);
+	}
+</style>

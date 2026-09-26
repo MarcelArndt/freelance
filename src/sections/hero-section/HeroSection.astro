@@ -1,0 +1,482 @@
+---
+import SliderComponent from "../../components/SliderComponent.astro";
+import ParagrafComponent from "../../components/ParagrafComponent.astro";
+import SocialMediaComponent from "../../components/SocialMediaComponent.astro";
+import content from "./text.json";
+import LoadingBarComponent from "../../components/LoadingBarComponent.astro";
+import RampCurtainComponent from "../../components/RampCurtainComponent.astro";
+
+export interface Props {
+	headline?: string;
+	text?: string;
+	buttonCTA?: string;
+	buttonInfo?: string;
+	stats?: { value: string; label: string }[];
+}
+
+const {
+	headline = content.title,
+	text = content.text,
+	buttonCTA = content.buttonCTA,
+	buttonInfo = content.buttonInfo,
+	stats = content.stats,
+}: Props = Astro.props;
+---
+
+<script>
+import { gsap } from "../../lib/gsap";
+
+  const LCP_MAX_SECONDS = 3;
+
+	function init(){
+		// GSAP ist geladen – das Sicherheitsnetz im BaseLayout darf die
+		// Startzustände jetzt stehen lassen.
+		document.documentElement.setAttribute("data-animations-ready", "");
+		playGsapAnimtion()
+		playParallaxAnimation()
+		getPageValues()
+	}
+
+	init()
+
+	/**
+	 * Die Startzustände (opacity 0, 150px nach unten versetzt) stehen im CSS
+	 * an html.js – sonst zeigt der Browser die Elemente einmal fertig, bevor
+	 * dieses Modul überhaupt läuft, und es flackert.
+	 *
+	 * Deshalb hier .to() statt .from(): animiert wird auf den Zielzustand zu.
+	 * Beim Portrait wird der Anchor eingeblendet, nicht das Portrait selbst –
+	 * dessen eigene Deckkraft von 0.3 soll erhalten bleiben. Die beiden
+	 * Deckkraft-Ebenen multiplizieren sich.
+	 */
+	function playGsapAnimtion(){
+		const textElemenent = document.getElementById('textbox-hero');
+		const infoElemenent = document.getElementById('info-hero');
+		const potraitElemenent = document.querySelector<HTMLElement>('.potrait-anchor');
+		if(!textElemenent || !infoElemenent || !potraitElemenent) return
+
+		if(window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+			// y bewusst nicht am Anchor zurücksetzen – das würde dessen
+			// translateX(-50%) überschreiben und das Portrait verschieben.
+			gsap.set([textElemenent, infoElemenent], { opacity:1, y:0 });
+			gsap.set(potraitElemenent, { opacity:1 });
+			return;
+		}
+
+		gsap.to(textElemenent ,{
+			opacity:1,
+			y:0,
+			duration:1,
+			delay:0.55
+		})
+		gsap.to(infoElemenent ,{
+			opacity:1,
+			y:0,
+			duration:1,
+			delay:0.7
+		})
+		gsap.to(potraitElemenent,{
+			opacity:1,
+			duration:1,
+			delay:0.25
+		})
+	}
+
+	/**
+	 * Parallax: Portrait wandert beim Scrollen leicht nach unten, Text- und
+	 * Infobox nach oben – die Textbox schneller als die Infobox. Dadurch
+	 * bewegen sich die drei Ebenen sichtbar unterschiedlich.
+	 *
+	 * Die Ziele sind bewusst die äußeren Wrapper: die Intro-Animation oben
+	 * schreibt auf die inneren Elemente, so überschreiben sich die
+	 * Transforms nicht gegenseitig.
+	 */
+	function playParallaxAnimation(){
+		const hero = document.querySelector<HTMLElement>('.hero');
+		if(!hero) return;
+
+		const mm = gsap.matchMedia();
+
+		mm.add({
+			isDesktop: "(min-width: 1025px)",
+			isMobile: "(max-width: 1024px)",
+			reduceMotion: "(prefers-reduced-motion: reduce)",
+		}, (context) => {
+			const conditions = context.conditions ?? {};
+			if(conditions.reduceMotion) return;
+
+			// Auf kleinen Screens deutlich zurückhaltender bewegen.
+			const strength = conditions.isDesktop ? 1 : 0.4;
+
+			const timeline = gsap.timeline({
+				scrollTrigger: {
+					trigger: hero,
+					start: "top top",
+					end: "bottom top",
+					scrub: 0.6,
+					invalidateOnRefresh: true,
+				},
+			});
+
+			timeline
+				.to('[data-parallax="potrait"]', { yPercent: 12 * strength, ease: "none" }, 0)
+				.to('[data-parallax="text"]', { yPercent: -22 * strength, ease: "none" }, 0)
+				.to('[data-parallax="info"]', { yPercent: -9 * strength, ease: "none" }, 0);
+		});
+	}
+
+	function getPageValues(){
+		new PerformanceObserver((entryList) => {
+			const entries = entryList.getEntries();
+			const lastEntry = entries[entries.length - 1];
+			const lcpSeconds = lastEntry.startTime / 1000;
+
+			const el = document.getElementById('lcp-output');
+			if (el) {
+			el.textContent = `${lcpSeconds.toFixed(2)} s`;
+			}
+
+			const bar = document.getElementById('lcp-loading-bar');
+			if (bar) {
+				const percent = Math.min(100, Math.max(0, (lcpSeconds / LCP_MAX_SECONDS) * 100));
+				bar.style.setProperty('--percent', `${percent}%`);
+				const label = bar.querySelector('.bar-label');
+				if (label) {
+					label.textContent = `${Math.round(percent)}%`;
+				}
+			}
+		}).observe({ type: 'largest-contentful-paint', buffered: true });
+	}
+
+
+  
+
+</script>
+
+<section class="hero">
+	<div class="dark__curtain"></div>
+	<RampCurtainComponent color="#fff"></RampCurtainComponent>
+	<div class="inner-content-wrapper">
+		<div class="red__bubble"></div>
+		<div class="yellow__bubble"></div>
+
+		<div class="potrait-anchor">
+			<div id="potrait" class="potrait" data-parallax="potrait">
+				{/* Ab 1025px wird das Portrait angezeigt – nur dort greift die
+				    source und nur dort lädt der Browser die Datei. Darunter
+				    fällt er auf das img zurück: ein leeres SVG als Data-URI,
+				    also gar kein Netzwerk-Request. */}
+				<picture>
+					<source
+						media="(min-width: 1025px)"
+						type="image/webp"
+						srcset="./assets/images/hero/about-me.webp"
+						width="798"
+						height="935"
+					/>
+					<img
+						loading="eager"
+						src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='798'%20height='935'%3E%3C/svg%3E"
+						alt=""
+						width="798"
+						height="935"
+						fetchpriority="high"
+					/>
+				</picture>
+			</div>
+		</div>
+
+		<div class="split-box" data-parallax="text">
+				<div id="textbox-hero" class="hero__content">
+					<p class="subline">Freelance Frontend & Backend Entwickler</p>
+					<h1 class="hero__headline">Websiten, die wirklich <span class=" text-gradient">schnell</span> ist.</h1>
+					<ParagrafComponent size="md" color="color-mix(in srgb, var(--ink-1) 60%, transparent);" maxWidth="55ch">
+						{text}
+					</ParagrafComponent>
+					<div class="button-flex">
+						<button>{buttonCTA}</button>
+						<button class="ghost">{buttonInfo}</button>
+					</div>
+				</div>
+		</div>
+
+		<div class="split-box" data-parallax="info">
+			<div id="info-hero" class="info-stack">
+			<div class="greybox">
+				<p class="subline">
+						Diese Seite wurde gerade eben gemessen.
+				</p>
+				<div class="box-flex">
+				<h1><span class="text-gradient" id="lcp-output"></span></h1>
+				<ParagrafComponent size="sm" color="color-mix(in srgb, var(--ink-1) 60%, transparent);" maxWidth="55ch">Largest Contentful Paint</ParagrafComponent>
+				</div>
+
+				<LoadingBarComponent id="lcp-loading-bar" 
+				currentValue={1} 
+				maxValue={5} 
+				borderRadius="0px"
+				backgroundColor="var(--card-border)"
+				margin="0.25rem 0px 1rem 0px"
+				showLabel={false}
+				height="8px" >
+			</LoadingBarComponent>
+				<ParagrafComponent size="sm" color="color-mix(in srgb, var(--ink-1) 60%, transparent);" maxWidth="55ch">
+						Ein typischer Baukasten-Auftritt liegt bei 3–5 sek. Der Unterschied entscheidet, ob Besucher bleiben.
+				</ParagrafComponent>
+			</div>
+			<div class="stat-row">
+				{stats.map((stat) => (
+					<div class="greybox">
+						<h2>{stat.value}</h2>
+						<ParagrafComponent size="sm" color="color-mix(in srgb, var(--ink-1) 60%, transparent);" maxWidth="55ch">
+							{stat.label}
+						</ParagrafComponent>
+					</div>
+				))}
+			</div>
+			</div>
+		</div>
+
+	</div>
+
+
+</section>
+
+
+
+<style>
+
+	h1{
+		font-size: clamp(1.5rem, 12vw, 5rem);
+	}
+
+	h2{
+		font-size: var(--h3);
+	}
+
+
+
+	.hero {
+		--white-curtain-height: 60px;
+		position: relative;
+		width: 100%;
+		height: calc(100svh + var(--white-curtain-height));
+		overflow: hidden;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background-color: #11131d;
+		box-sizing: border-box;
+		padding-top: 90px;
+	}
+
+	.inner-content-wrapper{
+		gap:2rem;
+	}
+
+	.split-box{
+		justify-content: end;
+		box-sizing: border-box;
+		padding-bottom: calc(6rem + var(--white-curtain-height));
+	}
+
+	#lcp-output{
+		font-family: var(--font);
+	}
+
+	/* Die Positionierung liegt im Anchor, nicht im Portrait selbst: GSAP
+	   schreibt beim Parallax die komplette transform-Eigenschaft neu und
+	   würde ein translateX(-50%) am selben Element verwerfen. */
+	.potrait-anchor{
+		position: absolute;
+		left: 50%;
+		bottom: var(--white-curtain-height);
+		transform: translateX(-50%);
+		width: min(798px, 85vw);
+		z-index: 1;
+	}
+
+	.potrait{
+		mix-blend-mode: dark-light;
+		opacity: 0.3;
+	}
+
+	.potrait picture,
+	.potrait img{
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.info-stack{
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+	}
+
+	/* Startzustand der Intro-Animation. Hängt an html.js, damit die Inhalte
+	   ohne JavaScript normal sichtbar bleiben. Die Elemente hier sind die
+	   inneren – der Parallax läuft auf den äußeren Wrappern, deshalb kollidiert
+	   dieses transform mit nichts. */
+	:global(html.js) .hero__content,
+	:global(html.js) .info-stack {
+		opacity: 0;
+		transform: translateY(150px);
+	}
+
+	/* Nur der Anchor wird eingeblendet, damit die Deckkraft des Portraits
+	   (0.3) erhalten bleibt. */
+	:global(html.js) .potrait-anchor {
+		opacity: 0;
+	}
+
+	.split-box{
+		position: static;
+		z-index: 10;
+	}
+
+	.stat-row{
+		display: flex;
+		gap: 1rem;
+		margin-top: 1rem;
+	}
+
+	.hero__content {
+		position: relative;
+		z-index: 2;
+		width: 100%;
+		margin-inline: auto;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1.5rem;
+		height: 100%;
+		box-sizing: border-box;
+		justify-content: end;
+		color:black;
+	}
+
+
+	.red__bubble{
+		width: 600px;
+		height: 600px;
+		filter: blur(10rem);
+		background-color: var(--accent);
+		border-radius: 50%;
+		position: absolute;
+		z-index: 1;
+		opacity: 0.3;
+		top: -50px;
+		left: -25%;;
+	}
+
+	.yellow__bubble{
+		width: 600px;
+		height: 600px;
+		filter: blur(10rem);
+		background-color: #d26338;
+		border-radius: 50%;
+		position: absolute;
+		z-index: 1;
+		opacity: 0.45;
+		bottom: -25%;
+		right: -25%;
+	}
+
+	.dark__curtain{
+		width: 100%;
+		position: absolute;
+		height: 100%;
+		background: linear-gradient(0deg, rgb(10, 3, 68) 0%, rgba(10, 3, 68, 0) 100%);
+		mix-blend-mode: multiply;
+		z-index: 10;
+		opacity: 1;
+		height: 75%;
+		bottom: 0px;
+		left: 0px;
+	}
+
+	.greybox{
+		h1{
+			font-size: var(--h2);
+			font-weight: 400;
+		}
+		h2{
+			font-weight: 400;
+		}
+	}
+
+	.hero :global(.hero__social) {
+		position: absolute;
+		right: var(--inner-padding);
+		bottom: clamp(1.5rem, 4vw, 3rem);
+		z-index: 2;
+	}
+
+	/* Ab hier einspaltig: Text über Infobox, Portrait bleibt als Ebene
+	   dahinter. Die Höhe darf mitwachsen, statt Inhalte abzuschneiden. */
+	@media (max-width: 1024px) {
+		.hero {
+			height: auto;
+			min-height: calc(100svh + var(--white-curtain-height));
+			align-items: flex-start;
+			padding-top: calc(var(--header-height) + 2rem);
+			padding-bottom: calc(3rem + var(--white-curtain-height));
+		}
+
+		.inner-content-wrapper {
+			flex-direction: column;
+			height: auto;
+			gap: 3rem;
+		}
+
+		.split-box {
+			width: 100%;
+			padding-bottom: 0;
+			justify-content: flex-start;
+		}
+
+		.hero__content {
+			justify-content: flex-start;
+			height: auto;
+		}
+
+		/* Einspaltig rutscht das Portrait hinter zwei Textblöcke und wird so
+		   klein, dass nichts mehr davon erkennbar ist – Text und Infos reichen. */
+		.potrait-anchor {
+			display: none;
+		}
+
+		.red__bubble,
+		.yellow__bubble {
+			width: 400px;
+			height: 400px;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.hero {
+			padding-bottom: calc(2rem + var(--white-curtain-height));
+		}
+
+		.inner-content-wrapper {
+			gap: 2rem;
+		}
+
+		.hero__content {
+			gap: 1.25rem;
+		}
+
+		.stat-row {
+			flex-wrap: wrap;
+		}
+
+		.stat-row .greybox {
+			flex: 1 1 100%;
+		}
+
+		.greybox h1 {
+			font-size: var(--h3);
+		}
+	}
+</style>

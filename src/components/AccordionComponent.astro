@@ -1,0 +1,95 @@
+---
+/**
+ * Rahmen um mehrere `AccordionItemComponent`. Bringt das Umschalten mit –
+ * die Items selbst enthalten kein JavaScript.
+ *
+ * Die Fläche ist bewusst hell gehalten; über `surface` lässt sie sich
+ * umstellen, ohne die Items anzufassen.
+ */
+export interface Props {
+	/** Nur eine Frage gleichzeitig offen. */
+	single?: boolean;
+	surface?: string;
+	lineColor?: string;
+	class?: string;
+}
+
+const {
+	single = true,
+	surface = "#ffffff",
+	lineColor = "#e2e2e2",
+	class: className,
+}: Props = Astro.props;
+
+const varStyle = [`--accordion-surface:${surface}`, `--accordion-line:${lineColor}`].join(";");
+---
+
+<script>
+	function init() {
+		// Der geschlossene Startzustand hängt an html.js. Das Sicherheitsnetz im
+		// BaseLayout darf die Klasse jetzt stehen lassen – lädt dieses Modul
+		// nicht, klappen nach 4s alle Antworten auf, statt unerreichbar zu sein.
+		document.documentElement.setAttribute("data-animations-ready", "");
+
+		document.querySelectorAll<HTMLElement>("[data-accordion]").forEach(setup);
+	}
+
+	init();
+
+	function setup(root: HTMLElement) {
+		const single = root.hasAttribute("data-single");
+
+		// Ein Listener am Container statt einer pro Zeile – so funktionieren
+		// auch später ergänzte Fragen ohne weiteres Zutun.
+		root.addEventListener("click", (event) => {
+			const target = event.target as HTMLElement | null;
+			const trigger = target?.closest<HTMLButtonElement>("[data-accordion-trigger]");
+			if (!trigger || !root.contains(trigger)) return;
+
+			const item = trigger.closest<HTMLElement>("[data-accordion-item]");
+			if (!item) return;
+
+			const willOpen = !item.hasAttribute("data-open");
+
+			if (single && willOpen) {
+				root.querySelectorAll<HTMLElement>("[data-accordion-item][data-open]").forEach(
+					(other) => {
+						if (other !== item) toggle(other, false);
+					},
+				);
+			}
+
+			toggle(item, willOpen);
+		});
+	}
+
+	function toggle(item: HTMLElement, open: boolean) {
+		const trigger = item.querySelector<HTMLButtonElement>("[data-accordion-trigger]");
+
+		if (open) {
+			item.setAttribute("data-open", "");
+		} else {
+			item.removeAttribute("data-open");
+		}
+
+		trigger?.setAttribute("aria-expanded", open ? "true" : "false");
+	}
+</script>
+
+<div
+	class:list={["accordion", className]}
+	style={varStyle}
+	data-accordion
+	data-single={single ? "" : undefined}
+>
+	<slot />
+</div>
+
+<style>
+	.accordion {
+		width: 100%;
+		box-sizing: border-box;
+		background-color: var(--accordion-surface);
+		box-shadow: 0 1px 2px rgba(20, 20, 20, 0.06), 0 8px 24px rgba(20, 20, 20, 0.05);
+	}
+</style>

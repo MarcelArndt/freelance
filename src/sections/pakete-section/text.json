@@ -1,0 +1,42 @@
+{
+	"subtitle": "Preise",
+	"title": "Feste Pakete, offene Zahlen",
+	"note": "Alle Preise netto zzgl. MwSt. Hosting ca. 5–15 € im Monat, direkt bei deinem Anbieter.",
+	"ctaLabel": "Anfragen",
+	"packages": [
+		{
+			"name": "Landingpage",
+			"price": "ab 1.500 €",
+			"text": "Eine Seite, die verkauft. Ideal für ein Angebot oder eine Kampagne.",
+			"features": [
+				"Individuelles Layout",
+				"Kontaktformular",
+				"Hosting-Setup",
+				"2 Korrekturrunden"
+			]
+		},
+		{
+			"name": "Website",
+			"price": "ab 3.500 €",
+			"badge": "Meist gewählt",
+			"text": "Der komplette Auftritt: mehrere Sektionen, Projekte, Team, Blog optional.",
+			"features": [
+				"Bis zu 6 Sektionen",
+				"Scroll-Animationen",
+				"SEO- & Performance-Setup",
+				"Redaktionelle Pflege möglich"
+			]
+		},
+		{
+			"name": "Individuell",
+			"price": "640 €/Tag",
+			"text": "Für Webapps, Backends oder laufende Zusammenarbeit im Team.",
+			"features": [
+				"Frontend & Backend",
+				"Komponenten-Bibliotheken",
+				"Code-Review & Übergabe",
+				"Remote oder vor Ort"
+			]
+		}
+	]
+}

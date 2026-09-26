@@ -1,0 +1,188 @@
+---
+import ParagrafComponent from "./ParagrafComponent.astro";
+
+/**
+ * Paketkarte: Name, Preis, Beschreibung, Leistungen, Button.
+ *
+ * Alle Zustände hängen am Hover der ganzen Karte – Fläche, Oberkante, Tag und
+ * Button wechseln gemeinsam. `:focus-within` zählt mit, damit der Zustand auch
+ * beim Durchtabben kommt.
+ */
+export interface Props {
+	name: string;
+	price: string;
+	text?: string;
+	features?: string[];
+	/** Kleiner Tag neben dem Namen, z.B. "Meist gewählt". */
+	badge?: string;
+	ctaLabel?: string;
+	ctaHref?: string;
+	class?: string;
+}
+
+const {
+	name,
+	price,
+	text,
+	features = [],
+	badge,
+	ctaLabel = "Anfragen",
+	ctaHref = "#kontakt",
+	class: className,
+}: Props = Astro.props;
+---
+
+<article class:list={["price-card", className]}>
+	<div class="price-card__head">
+		<h3 class="price-card__name">{name}</h3>
+		{badge && <span class="price-card__badge">{badge}</span>}
+	</div>
+
+	<p class="price-card__price">{price}</p>
+
+	{
+		text && (
+			<ParagrafComponent size="sm" color="#5f5f5f" class="price-card__text">
+				{text}
+			</ParagrafComponent>
+		)
+	}
+
+	{
+		features.length > 0 && (
+			<ul class="price-card__features">
+				{features.map((feature) => (
+					<li>{feature}</li>
+				))}
+			</ul>
+		)
+	}
+
+	{/* Kein <button>, sondern ein Link – er springt zum Kontaktformular. */}
+	<a class="btn ghost price-card__cta" href={ctaHref}>{ctaLabel}</a>
+</article>
+
+<style>
+	.price-card {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+		height: 100%;
+		box-sizing: border-box;
+		padding: clamp(1.5rem, 2.5vw, 2rem);
+		background-color: #ffffff;
+		/* Die Oberkante ist immer da, nur durchsichtig – sonst würde die Karte
+		   beim Hover um 3px höher und der Inhalt springt. */
+		border-top: var(--line-thicker) solid transparent;
+		box-shadow: 0 1px 2px rgba(20, 20, 20, 0.06), 0 8px 24px rgba(20, 20, 20, 0.05);
+		/* `translate` statt `transform`, wie bei den übrigen Karten – so bleibt
+		   der Hover unabhängig von einem später ergänzten GSAP-Reveal. */
+		transition: translate 0.25s ease-in-out, background-color 0.25s ease-in-out,
+			border-color 0.25s ease-in-out, box-shadow 0.25s ease-in-out;
+	}
+
+	.price-card:hover,
+	.price-card:focus-within {
+		background-color: var(--bg-grey);
+		border-top-color: var(--accent);
+		box-shadow: 0 2px 4px rgba(20, 20, 20, 0.08), 0 14px 32px rgba(20, 20, 20, 0.09);
+		translate: 0 -3px;
+	}
+
+	.price-card__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		width: 100%;
+	}
+
+	.price-card__name {
+		margin: 0;
+		font-family: var(--font);
+		font-size: var(--p-md);
+		font-weight: 400;
+		line-height: 1.2;
+		color: var(--ink-6);
+	}
+
+	/* Grau im Ruhezustand, erst im Hover die Akzentfarbe. */
+	.price-card__badge {
+		flex-shrink: 0;
+		padding: 0.35em 0.7em;
+		font-family: var(--meta);
+		font-size: var(--p-xs);
+		font-weight: 500;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		line-height: 1;
+		color: var(--ink-4);
+		background-color: #e2e2e2;
+		transition: background-color 0.25s ease-in-out, color 0.25s ease-in-out;
+	}
+
+	.price-card:hover .price-card__badge,
+	.price-card:focus-within .price-card__badge {
+		background-color: var(--accent);
+		color: #ffffff;
+	}
+
+	.price-card__price {
+		margin: 0;
+		font-family: var(--headline);
+		font-size: var(--h3);
+		font-weight: 700;
+		line-height: 1.1;
+		color: #2b0713;
+	}
+
+	.price-card__features {
+		list-style: none;
+		margin: 0.5rem 0 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		font-family: var(--font);
+		font-size: var(--p-sm);
+		font-weight: 300;
+		line-height: 1.4;
+		color: #5f5f5f;
+	}
+
+	/* Der Ghost-Button ist global auf dunklen Grund gestylt (helle Schrift) –
+	   hier steht er auf Weiß. Das `a` davor schlägt die globale `.btn.ghost`. */
+	a.price-card__cta {
+		width: 100%;
+		/* Schiebt den Button ans untere Ende, damit er in allen Karten auf
+		   derselben Höhe sitzt, auch bei unterschiedlich vielen Leistungen. */
+		margin-top: auto;
+		color: var(--ink-6);
+		border-color: color-mix(in srgb, var(--ink-6) 25%, transparent);
+		transition: color 0.25s ease-in-out, border-color 0.25s ease-in-out;
+	}
+
+	/* Der Button färbt sich mit der Karte, nicht erst unter dem Zeiger. Das
+	   eigene Anheben entfällt – die ganze Karte hebt sich ja schon. */
+	.price-card:hover a.price-card__cta,
+	.price-card:focus-within a.price-card__cta,
+	a.price-card__cta:hover {
+		color: var(--accent);
+		border-color: var(--accent);
+		transform: none;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.price-card,
+		.price-card__badge,
+		a.price-card__cta {
+			transition-duration: 1ms;
+		}
+
+		.price-card:hover,
+		.price-card:focus-within {
+			translate: none;
+		}
+	}
+</style>

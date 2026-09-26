@@ -1,0 +1,68 @@
+---
+import LogoComponent from "./LogoComponent.astro";
+import NavigationComponent from "./NavigationComponent.astro";
+
+export interface Props {
+	logoHref?: string;
+	logoAlt?: string;
+	navItems?: { label: string; href: string }[];
+}
+
+const { logoHref, logoAlt, navItems }: Props = Astro.props;
+---
+
+<header class="site-header">
+	<div class="site-header__inner">
+		<div class="inner-content-wrapper">
+		<LogoComponent href={logoHref} alt={logoAlt} />
+		<NavigationComponent items={navItems} />
+		</div>
+	</div>
+</header>
+
+<style>
+
+	header{
+		position: fixed;
+		width: 100vw;
+		z-index: 999;
+	}
+
+	.site-header {
+		height: var(--header-height);
+		display: flex;
+		justify-content: center;
+		width: 100%;
+	}
+
+	.site-header__inner {
+		position: relative;
+		max-width: var(--max-page-width);
+		height: 100%;
+		width: 100%;
+		display: flex;
+		align-items: center;
+		box-sizing: border-box;
+		justify-content: center;
+		border-bottom: 1px solid var(--line-color);
+	}
+
+	/* Hintergrund und Blur liegen bewusst auf einem Pseudo-Element statt auf
+	   .site-header__inner selbst: ein backdrop-filter am Element macht es zum
+	   Containing Block für alle position:fixed Nachfahren. Das mobile Menü
+	   hätte sich dann an der Header-Leiste ausgerichtet statt am Viewport.
+	   z-index:-1 hält die Fläche hinter Logo und Navigation. */
+	.site-header__inner::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		background-color: var(--bg-header);
+		backdrop-filter: blur(0.5rem);
+		pointer-events: none;
+	}
+
+	.inner-content-wrapper{
+		align-items: center;
+	}
+</style>

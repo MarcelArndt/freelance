@@ -1,0 +1,243 @@
+---
+import InputComponent from "./InputComponent.astro";
+import CheckboxComponent from "./CheckboxComponent.astro";
+import { pages } from "../lib/site";
+
+/**
+ * Kontaktformular. Die Texte kommen aus der text.json der Section, die
+ * Prüfung aus `FormValidator`.
+ *
+ * Es gibt noch keinen Endpunkt: ohne `action` läuft der Versand über eine
+ * Platzhalter-Funktion im Script unten, die nur wartet und Erfolg meldet.
+ */
+export interface Props {
+	fields?: {
+		name: { label: string; placeholder: string };
+		email: { label: string; placeholder: string };
+		message: { label: string; placeholder: string };
+	};
+	privacy?: { textBefore: string; linkLabel: string; linkHref: string; textAfter: string };
+	submitLabel?: string;
+	sendingLabel?: string;
+	successMessage?: string;
+	errorMessage?: string;
+	/** Ziel des Versands. Leer = Platzhalter, es wird nichts verschickt. */
+	action?: string;
+	class?: string;
+}
+
+const {
+	fields = {
+		name: { label: "Name", placeholder: "Vor- und Nachname" },
+		email: { label: "E-Mail", placeholder: "name@firma.de" },
+		message: { label: "Nachricht", placeholder: "Worum geht es? Gibt es schon eine Seite?" },
+	},
+	privacy = {
+		textBefore: "Ich habe die",
+		linkLabel: "Datenschutzerklärung",
+		linkHref: pages.datenschutz,
+		textAfter: "gelesen und stimme der Verarbeitung meiner Angaben zu.",
+	},
+	submitLabel = "Nachricht senden",
+	sendingLabel = "Wird gesendet …",
+	successMessage = "Danke! Deine Nachricht ist angekommen – ich melde mich innerhalb von 24 Stunden.",
+	errorMessage = "Das hat gerade nicht geklappt. Schreib mir gerne direkt eine E-Mail.",
+	action = "",
+	class: className,
+}: Props = Astro.props;
+---
+
+<script>
+	import { FormValidator } from "../utils/scripts/validation";
+
+	function init() {
+		const form = document.querySelector<HTMLFormElement>("[data-contact-form]");
+		if (!form) return;
+
+		const submit = form.querySelector<HTMLButtonElement>("[data-form-submit]");
+		const status = form.querySelector<HTMLElement>("[data-form-status]");
+		const labels = {
+			submit: submit?.textContent?.trim() ?? "",
+			sending: form.dataset.sendingLabel ?? "",
+			success: form.dataset.successMessage ?? "",
+			error: form.dataset.errorMessage ?? "",
+		};
+
+		// Der Button bleibt gesperrt, solange irgendein Feld noch nicht passt.
+		const validator = new FormValidator(form, {
+			onChange: (isValid) => {
+				if (submit) submit.disabled = !isValid;
+			},
+		}).init();
+
+		form.addEventListener("submit", async (event) => {
+			event.preventDefault();
+
+			if (!validator.validateAll()) {
+				validator.firstInvalid()?.focus();
+				return;
+			}
+
+			setStatus("");
+			toggleSending(true);
+
+			try {
+				await send(new FormData(form), form.getAttribute("action") ?? "");
+				form.reset();
+				validator.reset();
+				setStatus(labels.success, "success");
+			} catch {
+				setStatus(labels.error, "error");
+			} finally {
+				toggleSending(false);
+			}
+		});
+
+		/**
+		 * Platzhalter-Anbindung: Solange kein Endpunkt hinterlegt ist, wird
+		 * nichts verschickt – die Funktion wartet nur kurz, damit der
+		 * Sende-Zustand sichtbar ist. Sobald es ein Backend gibt, reicht ein
+		 * `action` am Formular.
+		 */
+		async function send(data: FormData, endpoint: string) {
+			if (!endpoint) {
+				console.info("[Kontaktformular] Kein Endpunkt gesetzt – Platzhalter-Versand:", {
+					...Object.fromEntries(data),
+				});
+				await new Promise((resolve) => setTimeout(resolve, 800));
+				return;
+			}
+
+			const response = await fetch(endpoint, {
+				method: "POST",
+				body: data,
+				headers: { Accept: "application/json" },
+			});
+
+			if (!response.ok) throw new Error(`Status ${response.status}`);
+		}
+
+		function toggleSending(isSending: boolean) {
+			if (!submit) return;
+			submit.disabled = isSending || !validator.isValid();
+			submit.textContent = isSending ? labels.sending : labels.submit;
+		}
+
+		function setStatus(message: string, type: "success" | "error" | "" = "") {
+			if (!status) return;
+			status.textContent = message;
+			if (type) {
+				status.setAttribute("data-type", type);
+			} else {
+				status.removeAttribute("data-type");
+			}
+		}
+	}
+
+	init();
+</script>
+
+<form
+	class:list={["form", className]}
+	data-contact-form
+	action={action}
+	method="post"
+	novalidate
+	data-sending-label={sendingLabel}
+	data-success-message={successMessage}
+	data-error-message={errorMessage}
+>
+	<InputComponent
+		name="name"
+		label={fields.name.label}
+		placeholder={fields.name.placeholder}
+		autocomplete="name"
+		validate="required minLength"
+		minLength={2}
+	/>
+
+	<InputComponent
+		name="email"
+		type="email"
+		label={fields.email.label}
+		placeholder={fields.email.placeholder}
+		autocomplete="email"
+		validate="required email"
+	/>
+
+	<InputComponent
+		name="message"
+		type="textarea"
+		label={fields.message.label}
+		placeholder={fields.message.placeholder}
+		validate="required minLength"
+		minLength={20}
+	/>
+
+	<CheckboxComponent name="privacy" validate="checked" class="form__privacy">
+		{privacy.textBefore}{" "}
+		<a href={privacy.linkHref}>{privacy.linkLabel}</a>{" "}
+		{privacy.textAfter}
+	</CheckboxComponent>
+
+	{/* Startet gesperrt: ohne JavaScript bleibt das Formular sonst absendbar,
+	    obwohl es keinen Endpunkt gibt. */}
+	<button class="ghost form__submit" type="submit" data-form-submit disabled>
+		{submitLabel}
+	</button>
+
+	<p class="form__status" data-form-status role="status" aria-live="polite"></p>
+</form>
+
+<style>
+	.form {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		width: 100%;
+	}
+
+	/* Der Ghost-Button aus dem Hero steht auf dunklem Grund – hier liegt er
+	   auf der hellen Fläche und braucht die dunkle Schrift. Das `button` davor
+	   ist nötig, um die globale Regel `button.ghost` zu überbieten. */
+	button.form__submit {
+		align-self: flex-start;
+		color: var(--ink-6);
+		border-color: color-mix(in srgb, var(--ink-6) 30%, transparent);
+	}
+
+	button.form__submit:disabled {
+		color: var(--ink-3);
+		border-color: var(--btn-disable-border-bg);
+		cursor: not-allowed;
+	}
+
+	/* Kein Anheben, solange nichts abzuschicken ist. */
+	button.form__submit:disabled:hover {
+		transform: none;
+		border-color: var(--btn-disable-border-bg);
+	}
+
+	.form__status {
+		margin: 0;
+		min-height: 1.4em;
+		font-family: var(--font);
+		font-size: var(--p-sm);
+		line-height: 1.4;
+		color: var(--ink-4);
+	}
+
+	.form__status[data-type="success"] {
+		color: var(--btn-hover-bg);
+	}
+
+	.form__status[data-type="error"] {
+		color: var(--error-color);
+	}
+
+	/* Beide Klassen landen auf den Root-Elementen der Child-Components und
+	   tragen deren Scope-ID – deshalb :global(). */
+	.form :global(.form__privacy) {
+		margin-top: 0.25rem;
+	}
+</style>

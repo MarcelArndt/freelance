@@ -1,0 +1,164 @@
+---
+import IconsComponent from "./IconsComponent.astro";
+import ParagrafComponent from "./ParagrafComponent.astro";
+
+export interface Props {
+	/** Pfad zum SVG unterhalb von /public, z.B. "/assets/svgs/what-i-build/tempo.svg". */
+	icon?: string;
+	iconSize?: string;
+	iconColor?: string;
+	title?: string;
+	text?: string;
+	/** Ziel des Links im Kartenfuß. Ohne href wird kein Link gerendert. */
+	href?: string;
+	linkLabel?: string;
+	variant?: "light" | "dark";
+	/** Hebt die ganze Karte beim Hover an – wie die Buttons um 3px. */
+	hover?: boolean;
+	textSize?: "xs" | "sm" | "md" | "lg" | "xl";
+	class?: string;
+}
+
+const {
+	icon,
+	iconSize = "2rem",
+	iconColor = "var(--accent)",
+	title,
+	text,
+	href,
+	linkLabel,
+	variant = "light",
+	hover = true,
+	textSize = "sm",
+	class: className,
+}: Props = Astro.props;
+
+const varStyle = `--card-icon-color:${iconColor}`;
+---
+
+<article
+	class:list={["card", `card--${variant}`, hover && "card--hover", className]}
+	style={varStyle}
+>
+	{icon && <IconsComponent src={icon} size={iconSize} class="card__icon" />}
+
+	{title && <h3 class="card__title">{title}</h3>}
+
+	{
+		text && (
+			<ParagrafComponent size={textSize} color="var(--card-text-color)" class="card__text">
+				{text}
+			</ParagrafComponent>
+		)
+	}
+
+	<slot />
+
+	{
+		href && linkLabel && (
+			<a class="card__link" href={href}>
+				{linkLabel}
+				<span class="card__arrow" aria-hidden="true">
+					→
+				</span>
+			</a>
+		)
+	}
+</article>
+
+<style>
+	.card {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+		box-sizing: border-box;
+		padding: clamp(1.5rem, 2.5vw, 2rem);
+		background-color: var(--card-surface);
+		box-shadow: var(--card-shadow);
+		/* Bewusst `translate` statt `transform`: das Scroll-Reveal schreibt per
+		   GSAP ein inline `transform` auf die Karte. Stünde `transform` hier in
+		   der transition, liefe die Scroll-Animation ihr 0.25s hinterher.
+		   Das inline `translate: none`, das GSAP beim Parsen mitsetzt, räumt
+		   das Reveal am Ende per clearProps wieder weg. */
+		transition: translate 0.25s ease-in-out, box-shadow 0.25s ease-in-out;
+	}
+
+	.card--light {
+		--card-surface: #ffffff;
+		--card-title-color: #161616;
+		--card-text-color: #5f5f5f;
+		--card-shadow: 0 1px 2px rgba(20, 20, 20, 0.06), 0 8px 24px rgba(20, 20, 20, 0.05);
+		--card-shadow-hover: 0 2px 4px rgba(20, 20, 20, 0.08), 0 14px 32px rgba(20, 20, 20, 0.09);
+	}
+
+	.card--dark {
+		--card-surface: #141414;
+		--card-title-color: #ffffff;
+		--card-text-color: rgba(255, 255, 255, 0.7);
+		--card-shadow: 0 1px 2px rgba(20, 20, 20, 0.12), 0 8px 24px rgba(20, 20, 20, 0.14);
+		--card-shadow-hover: 0 2px 4px rgba(20, 20, 20, 0.16), 0 14px 32px rgba(20, 20, 20, 0.2);
+	}
+
+	.card--hover:hover {
+		translate: 0 -3px;
+		box-shadow: var(--card-shadow-hover);
+	}
+
+	.card :global(.card__icon) {
+		color: var(--card-icon-color);
+		margin-bottom: 0.25rem;
+	}
+
+	.card__title {
+		margin: 0;
+		font-family: var(--headline);
+		font-size: 1.25rem;
+		font-weight: 400;
+		line-height: 1.25;
+		color: var(--card-title-color);
+	}
+
+	/* Der Link sitzt immer am unteren Rand, auch wenn die Karte durch das
+	   Grid höher gezogen wird als ihr Inhalt. */
+	.card__link {
+		margin-top: auto;
+		padding-top: 0.5rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-family: var(--font);
+		font-size: var(--p-sm);
+		font-weight: 400;
+		color: var(--accent);
+		text-decoration: none;
+		transition: color 0.25s ease-in-out;
+	}
+
+	.card__link:hover {
+		color: color-mix(in srgb, var(--accent) 65%, #ffffff);
+	}
+
+	.card__arrow {
+		transition: transform 0.25s ease-in-out;
+	}
+
+	.card__link:hover .card__arrow {
+		transform: translateX(4px);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.card,
+		.card__arrow {
+			transition-duration: 1ms;
+		}
+
+		.card--hover:hover {
+			translate: none;
+		}
+
+		.card__link:hover .card__arrow {
+			transform: none;
+		}
+	}
+</style>

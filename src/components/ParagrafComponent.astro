@@ -1,0 +1,73 @@
+---
+export interface Props {
+	as?: "p" | "span" | "div";
+	size?: "xs" | "sm" | "md" | "lg" | "xl";
+	weight?: "normal" | "medium" | "bold";
+	color?: string;
+	align?: "left" | "center" | "right" | "justify";
+	italic?: boolean;
+	uppercase?: boolean;
+	maxWidth?: string;
+	lines?: number;
+	class?: string;
+}
+
+const {
+	as: Tag = "p",
+	size = "md",
+	weight = "normal",
+	color = "inherit",
+	align = "left",
+	italic = false,
+	uppercase = false,
+	maxWidth = "none",
+	lines,
+	class: className,
+	...rest
+}: Props = Astro.props;
+
+const weightMap = { normal: "300", medium: "400", bold: "600" } as const;
+
+// define:vars can't attach to a dynamic `<Tag>` root, so the custom
+// properties are built into a plain inline style string instead.
+const varStyle = [
+	`--size:var(--p-${size})`,
+	`--weight:${weightMap[weight]}`,
+	`--color:${color}`,
+	`--align:${align}`,
+	`--font-style:${italic ? "italic" : "normal"}`,
+	`--text-transform:${uppercase ? "uppercase" : "none"}`,
+	`--max-width:${maxWidth}`,
+	`--line-clamp:${lines ?? "none"}`,
+].join(";");
+---
+
+<Tag
+	class:list={["paragraph", lines && "paragraph--clamp", className]}
+	style={varStyle}
+	{...rest}
+>
+	<slot />
+</Tag>
+
+<style>
+	.paragraph {
+		margin: 0;
+		font-family: var(--font);
+		font-size: calc(var(--size) * var(--font-scale, 1));
+		font-weight: var(--weight);
+		color: var(--color);
+		text-align: var(--align);
+		font-style: var(--font-style);
+		text-transform: var(--text-transform);
+		max-width: var(--max-width);
+		line-height: 1.5;
+	}
+
+	.paragraph--clamp {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		-webkit-line-clamp: var(--line-clamp);
+	}
+</style>

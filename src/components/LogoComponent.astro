@@ -1,0 +1,23 @@
+---
+export interface Props {
+	href?: string;
+	alt?: string;
+}
+
+const { href = "/", alt = "Zur Startseite" }: Props = Astro.props;
+---
+
+<a class="logo" href={href} aria-label={alt}></a>
+
+<style>
+	.logo {
+		display: inline-block;
+		flex-shrink: 0;
+		width: clamp(120px, 20vw, 180px);
+		height: calc(var(--header-height) - 24px);
+		background-image: var(--logo-bg);
+		background-repeat: no-repeat;
+		background-position: left center;
+		background-size: contain;
+	}
+</style>

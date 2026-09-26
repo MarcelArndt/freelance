@@ -1,17 +1,25 @@
 ---
+  import BaseLayout from '../layouts/BaseLayout.astro';
+  import HeroSection from '../sections/hero-section/HeroSection.astro';
+  import WhyMeSection from '../sections/why-me-section/WhyMeSection.astro';
+  import WhatIBuildSection from '../sections/what-i-build-section/WhatIBuildSection.astro';
+  import AboutMeSection from '../sections/about-me-section/AboutMeSection.astro';
+  import AblaufSection from '../sections/ablauf-section/AblaufSection.astro';
+  import PaketeSection from '../sections/pakete-section/PaketeSection.astro';
+  import FaqSection from '../sections/faq-section/FaqSection.astro';
+  import ContactSection from '../sections/contact-section/ContactSection.astro';
 
+  const pageTitle = "Marcel Arndt Web-Developer";
+  const pageDescription = "Marcel Arndt – Freelance Web Developer aus Deutschland. Spezialisiert auf moderne Webentwicklung mit Fokus auf Performance und Design."
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout pageTitle={pageTitle} description={pageDescription}>
+  <HeroSection />
+  <WhyMeSection />
+  <WhatIBuildSection />
+  <AboutMeSection />
+  <AblaufSection />
+  <PaketeSection />
+  <FaqSection />
+  <ContactSection />
+</BaseLayout>

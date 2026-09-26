@@ -1,0 +1,23 @@
+/* UI/body, */
+@font-face {
+  font-family: 'body-font';
+  src: url('./fonts/RedditSans-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+/* Headlines */
+@font-face {
+  font-family: 'headline-font';
+  src: url('./fonts/RedditSans-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+/* very small text like metadata */
+@font-face {
+  font-family: 'meta-font';
+  src: url('./fonts/RedditSans-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+}

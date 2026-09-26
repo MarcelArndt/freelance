@@ -1,0 +1,229 @@
+---
+import LogoComponent from "./LogoComponent.astro";
+import ParagrafComponent from "./ParagrafComponent.astro";
+import { site, mailto, anchors, pages } from "../lib/site";
+
+/**
+ * Fußzeile: Marke links, Linkspalten rechts, darunter eine Zeile mit
+ * Copyright und der gemessenen Ladezeit dieser Seite.
+ */
+export interface Props {
+	text?: string;
+	columns?: { title: string; links: { label: string; href: string }[] }[];
+	owner?: string;
+	/** Text vor der gemessenen Ladezeit. */
+	note?: string;
+	class?: string;
+}
+
+const {
+	text = "Freelance Frontend & Backend Entwickler. Individuelle, schnelle Websites mit Astro.",
+	columns = [
+		{
+			title: "Seite",
+			links: [
+				{ label: "Warum Ich", href: pages.whyMe },
+				{ label: "Leistungen", href: pages.leistungen },
+				{ label: "Preise", href: anchors.preise },
+			],
+		},
+		{
+			title: "Rechtliches",
+			links: [
+				{ label: "Impressum", href: pages.impressum },
+				{ label: "Datenschutz", href: pages.datenschutz },
+			],
+		},
+		{
+			title: "Kontakt",
+			links: [{ label: site.email, href: mailto }],
+		},
+	],
+	owner = site.owner,
+	note = "Gebaut mit Astro — diese Seite lädt in",
+	class: className,
+}: Props = Astro.props;
+
+// Zur Buildzeit gesetzt – die Jahreszahl im Copyright muss niemand pflegen.
+const year = new Date().getFullYear();
+---
+
+<script>
+	/**
+	 * Trägt den Largest Contentful Paint in die Fußzeile ein. `buffered: true`
+	 * liefert den Wert auch nach, wenn er vor dem Start dieses Scripts
+	 * gemessen wurde. Bleibt der Eintrag aus (ältere Browser), steht dort
+	 * weiter der Platzhalter aus dem Markup.
+	 */
+	function init() {
+		const output = document.querySelector<HTMLElement>("[data-footer-lcp]");
+		if (!output || typeof PerformanceObserver === "undefined") return;
+
+		new PerformanceObserver((list) => {
+			const entries = list.getEntries();
+			const last = entries[entries.length - 1];
+			if (!last) return;
+
+			const seconds = last.startTime / 1000;
+			output.textContent = ` ${seconds.toFixed(2).replace(".", ",")} s`;
+		}).observe({ type: "largest-contentful-paint", buffered: true });
+	}
+
+	init();
+</script>
+
+<footer class:list={["footer", className]}>
+	<div class="inner-content-wrapper">
+		<div class="footer__inner">
+			<div class="footer__top">
+				<div class="footer__brand">
+					<LogoComponent href="/" alt="Zur Startseite" />
+					<ParagrafComponent size="sm" color="rgba(255, 255, 255, 0.55)" maxWidth="34ch">
+						{text}
+					</ParagrafComponent>
+				</div>
+
+				<nav class="footer__columns" aria-label="Fußzeile">
+					{
+						columns.map((column) => (
+							<div class="footer__column">
+								<p class="footer__column-title">{column.title}</p>
+								<ul class="footer__list">
+									{column.links.map((link) => (
+										<li>
+											<a class="footer__link" href={link.href}>
+												{link.label}
+											</a>
+										</li>
+									))}
+								</ul>
+							</div>
+						))
+					}
+				</nav>
+			</div>
+
+			<div class="footer__bar">
+				<ParagrafComponent size="xs" color="rgba(255, 255, 255, 0.4)">
+					© {year} &nbsp; {owner}
+				</ParagrafComponent>
+
+				<ParagrafComponent size="xs" color="rgba(255, 255, 255, 0.4)">
+					{note} <span data-footer-lcp>—</span>
+				</ParagrafComponent>
+			</div>
+		</div>
+	</div>
+</footer>
+
+<style>
+	.footer {
+		width: 100%;
+		background-color: var(--bg-dark);
+		display: flex;
+		justify-content: center;
+		box-sizing: border-box;
+	}
+
+	.footer__inner {
+		width: 100%;
+		max-width: var(--max-page-width);
+		padding: clamp(2.5rem, 6vw, 4rem) 0 clamp(1.5rem, 3vw, 2rem);
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.footer__top {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+		gap: clamp(2rem, 5vw, 4rem);
+		padding-bottom: clamp(2rem, 4vw, 3rem);
+	}
+
+	.footer__brand {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.75rem;
+	}
+
+	/* Das Logo trägt die Scope-ID der LogoComponent, deshalb :global(). Im
+	   Footer darf es kleiner sein als in der Header-Leiste. */
+	.footer__brand :global(.logo) {
+		height: 2.25rem;
+	}
+
+	.footer__columns {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: clamp(1.5rem, 3vw, 2.5rem);
+	}
+
+	.footer__column-title {
+		margin: 0 0 1rem;
+		font-family: var(--meta);
+		font-size: var(--p-xs);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.4);
+	}
+
+	.footer__list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.footer__link {
+		font-family: var(--font);
+		font-size: var(--p-sm);
+		font-weight: 300;
+		color: rgba(255, 255, 255, 0.75);
+		text-decoration: none;
+		/* `translate` statt `transform`, wie überall sonst auf der Seite. */
+		transition: color 0.25s ease-in-out, translate 0.25s ease-in-out;
+	}
+
+	.footer__link:hover,
+	.footer__link:focus-visible {
+		color: var(--accent);
+		translate: 0 -3px;
+	}
+
+	.footer__bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+		padding-top: clamp(1rem, 2vw, 1.5rem);
+		border-top: var(--line-thickness) solid rgba(255, 255, 255, 0.08);
+	}
+
+	@media (max-width: 900px) {
+		.footer__top {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.footer__columns {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.footer__link {
+			transition-duration: 1ms;
+		}
+
+		.footer__link:hover,
+		.footer__link:focus-visible {
+			translate: none;
+		}
+	}
+</style>

@@ -1,0 +1,102 @@
+---
+import { readdirSync } from "node:fs";
+
+export interface Props {
+	interval?: number;
+	fadeDuration?: number;
+}
+
+const { interval = 6, fadeDuration = 1.5 }: Props = Astro.props;
+
+const heroDir = new URL("../../public/assets/images/hero/", import.meta.url);
+const imageExtensions = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif"]);
+
+const images = readdirSync(heroDir)
+	.filter((file: string) => imageExtensions.has(file.slice(file.lastIndexOf(".")).toLowerCase()))
+	.sort()
+	.map((file: string) => `/assets/images/hero/${file}`);
+---
+
+{images.length > 0 && (
+	<div class="slider start" style={`--fade-duration:${fadeDuration}s`} aria-hidden="true">
+		{images.map((src: string, i: number) => (
+			<img
+				src={src}
+				alt=""
+				class:list={["slide", i === 0 && "is-active"]}
+				loading="eager"
+				decoding="async"
+			/>
+		))}
+	</div>
+)}
+
+<style>
+	.slider {
+		position: relative;
+		width: 100%;
+		height: 100vh;
+		height: 100dvh;
+		overflow: hidden;
+	}
+
+	.slide {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		opacity: 1;
+	}
+
+    .slide.not(.start){
+        animation: blur-out forwards;
+        animation-duration: var(--fade-duration, 1.5s);
+    }
+
+	.slide.is-active {
+        filter: blur(0px);
+        animation: fade-in forwards;
+        animation-duration: var(--fade-duration, 1.5s);
+	}
+
+    @keyframes fade-in {
+        from{
+            opacity: 0;
+        }
+        to{
+            opacity: 1;
+        }
+    }
+
+    @keyframes blur-out {
+        from{
+            filter: blur(0px);
+        }
+        to{
+             filter: blur(20px);
+        }
+    }
+
+
+</style>
+
+<script define:vars={{ interval }} is:inline>
+	document.querySelectorAll(".slider").forEach((container) => {
+		const slides = Array.from(container.querySelectorAll(".slide"));
+		if (slides.length < 2) return;
+
+		let index = 0;
+
+		setInterval(() => {
+			const current = slides[index];
+			index = (index + 1) % slides.length;
+			const next = slides[index];
+
+			container.appendChild(next);
+			next.classList.add("is-active");
+			current.classList.remove("is-active");
+            current.classList.remove("start");
+		}, interval * 1000);
+	});
+</script>

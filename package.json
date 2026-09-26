@@ -12,6 +12,8 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^7.1.6"
+    "@storyblok/astro": "^10.2.3",
+    "astro": "^7.1.6",
+    "gsap": "^3.15.0"
   }
 }

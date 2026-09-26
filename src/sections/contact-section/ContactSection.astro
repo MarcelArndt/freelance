@@ -1,0 +1,201 @@
+---
+import ParagrafComponent from "../../components/ParagrafComponent.astro";
+import SocialMediaComponent from "../../components/SocialMediaComponent.astro";
+import FormComponent from "../../components/Form-Component.astro";
+import RampCurtainComponent from "../../components/RampCurtainComponent.astro";
+import { site, socials, pages } from "../../lib/site";
+import content from "./text.json";
+
+export interface Props {
+	subtitle?: string;
+	title?: string;
+	text?: string;
+	email?: string;
+	note?: string;
+}
+
+// Adresse und Profile kommen aus src/lib/site.ts, nicht aus der text.json –
+// sie stehen auch im Footer und in "Über mich".
+const {
+	subtitle = content.subtitle,
+	title = content.title,
+	text = content.text,
+	email = site.email,
+	note = content.note,
+}: Props = Astro.props;
+
+const { form } = content;
+---
+
+<script>
+	import { gsap } from "../../lib/gsap";
+
+	function init() {
+		// GSAP ist geladen – das Sicherheitsnetz im BaseLayout darf die
+		// Startzustände jetzt stehen lassen.
+		document.documentElement.setAttribute("data-animations-ready", "");
+		playContactReveal();
+	}
+
+	init();
+
+	/**
+	 * Text und Formular steigen leicht von unten ein, das Formular kurz nach
+	 * dem Text. Bewusst kürzer als bei den Karten – die letzte Section soll
+	 * ruhig wirken, nicht noch einmal auffahren.
+	 */
+	function playContactReveal() {
+		const intro = document.querySelector<HTMLElement>(".contact__intro");
+		const panel = document.querySelector<HTMLElement>(".contact__panel");
+		if (!intro || !panel) return;
+
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			return;
+		}
+
+		const targets = [intro, panel];
+
+		gsap.from(targets, {
+			opacity: 0,
+			y: "+=60px",
+			duration: 0.8,
+			stagger: 0.15,
+			ease: "power2.out",
+			scrollTrigger: {
+				trigger: intro,
+				start: "top 75%",
+			},
+			// Zurück ans CSS: sonst bliebe ein inline transform stehen und
+			// darunter das translate:none, über das die Social-Icons hovern.
+			onComplete: () => gsap.set(targets, { clearProps: "transform,opacity" }),
+		});
+	}
+</script>
+
+<section class="contact" id="kontakt">
+	{/* Die Curtain trägt die Farbe des folgenden Bereichs – hier der dunkle
+	    Footer. */}
+	<RampCurtainComponent color="var(--bg-dark)"></RampCurtainComponent>
+
+	<div class="inner-content-wrapper">
+		<div class="contact__content">
+			<div class="contact__intro">
+				<p class="subline">{subtitle}</p>
+				<h2 class="contact__title">{title}</h2>
+
+				<ParagrafComponent size="md" color="#5f5f5f" maxWidth="42ch">
+					{text}
+				</ParagrafComponent>
+
+				<div class="contact__meta">
+					<a class="contact__mail" href={`mailto:${email}`}>{email}</a>
+					<ParagrafComponent size="sm" color="#5f5f5f">{note}</ParagrafComponent>
+				</div>
+
+				<SocialMediaComponent items={socials} class="contact__social" />
+			</div>
+
+			<div class="contact__panel">
+				<FormComponent
+					fields={form.fields}
+					privacy={{ ...form.privacy, linkHref: pages.datenschutz }}
+					submitLabel={form.submitLabel}
+					sendingLabel={form.sendingLabel}
+					successMessage={form.successMessage}
+					errorMessage={form.errorMessage}
+				/>
+			</div>
+		</div>
+	</div>
+</section>
+
+<style>
+	.contact {
+		/* Der Header liegt fixiert darüber – ohne diesen Abstand verschwindet
+		   die Überschrift beim Sprung auf #kontakt darunter. */
+		scroll-margin-top: var(--header-height);
+		width: 100%;
+		background-color: #ffffff;
+		display: flex;
+		justify-content: center;
+		position: relative;
+		box-sizing: border-box;
+		/* Platz für die Curtain, damit sie nicht über den Inhalt läuft. */
+		padding-bottom: 60px;
+	}
+
+	.contact__content {
+		width: 100%;
+		max-width: var(--max-page-width);
+		padding: clamp(3rem, 10vw, 6rem) 0px;
+		box-sizing: border-box;
+		display: grid;
+		grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+		align-items: start;
+		gap: clamp(2rem, 5vw, 4rem);
+	}
+
+	.contact__intro {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+		padding-top: clamp(0rem, 2vw, 1.5rem);
+	}
+
+	.contact__title {
+		margin: 0 0 0.5rem;
+		font-size: var(--h2);
+		line-height: 1.1;
+		color: #2b0713;
+		max-width: 14ch;
+	}
+
+	.contact__meta {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		margin-top: 0.5rem;
+	}
+
+	.contact__mail {
+		font-family: var(--font);
+		font-size: var(--p-sm);
+		color: var(--ink-6);
+		text-decoration: none;
+		width: fit-content;
+		border-bottom: var(--line-thickness) solid transparent;
+		transition: color 0.25s ease-in-out, border-color 0.25s ease-in-out;
+	}
+
+	.contact__mail:hover {
+		color: var(--accent);
+		border-bottom-color: var(--accent);
+	}
+
+	.contact :global(.contact__social) {
+		margin-top: 1rem;
+	}
+
+	.contact__panel {
+		background-color: var(--bg-grey);
+		box-sizing: border-box;
+		padding: clamp(1.5rem, 3vw, 2.5rem);
+	}
+
+	@media (max-width: 900px) {
+		.contact__content {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.contact__title {
+			max-width: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.contact__mail {
+			transition-duration: 1ms;
+		}
+	}
+</style>

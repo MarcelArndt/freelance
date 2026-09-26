@@ -1,0 +1,173 @@
+---
+import ParagrafComponent from "../../components/ParagrafComponent.astro";
+import SocialMediaComponent from "../../components/SocialMediaComponent.astro";
+import RampCurtainComponent from "../../components/RampCurtainComponent.astro";
+import { socials } from "../../lib/site";
+import content from "./text.json";
+
+export interface Props {
+	subtitle?: string;
+	title?: string;
+	text?: string;
+	textSecondary?: string;
+}
+
+const {
+	subtitle = content.subtitle,
+	title = content.title,
+	text = content.text,
+	textSecondary = content.textSecondary,
+}: Props = Astro.props;
+
+// Die Profile stehen zentral in src/lib/site.ts – sie tauchen auch im Kontakt
+// und im Footer auf.
+const { image } = content;
+---
+
+<script>
+	import { gsap } from "../../lib/gsap";
+
+	function init() {
+		// GSAP ist geladen – das Sicherheitsnetz im BaseLayout darf die
+		// Startzustände jetzt stehen lassen.
+		document.documentElement.setAttribute("data-animations-ready", "");
+		playImageReveal();
+	}
+
+	init();
+
+	/**
+	 * Das Portrait blendet sich beim Hereinscrollen einmal sanft ein – mehr
+	 * braucht diese Section nicht, der Text daneben bleibt ruhig stehen.
+	 */
+	function playImageReveal() {
+		const image = document.querySelector<HTMLElement>(".about__media");
+		if (!image) return;
+
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			return;
+		}
+
+		gsap.from(image, {
+			opacity: 0,
+			duration: 1,
+			ease: "power2.out",
+			scrollTrigger: {
+				trigger: image,
+				start: "top 85%",
+			},
+			// Deckkraft zurück ans CSS geben, sonst bliebe ein inline
+			// opacity:1 stehen.
+			onComplete: () => gsap.set(image, { clearProps: "opacity" }),
+		});
+	}
+</script>
+
+<section class="about">
+	{/* Die Curtain trägt immer die Farbe der folgenden Section – hier der
+	    dunkle Ablauf. */}
+	<RampCurtainComponent color="var(--bg-dark)"></RampCurtainComponent>
+	<div class="inner-content-wrapper">
+		<div class="about__content">
+			<figure class="about__media">
+				<img
+					class="about__image"
+					src={image.src}
+					alt={image.alt}
+					width={image.width}
+					height={image.height}
+					loading="lazy"
+					decoding="async"
+				/>
+			</figure>
+
+			<div class="about__text">
+				<p class="subline">{subtitle}</p>
+				<h2 class="about__title">{title}</h2>
+
+				{/* Beide Absätze bewusst in derselben Größe – nur die Farbe
+				    unterscheidet sie. */}
+				<ParagrafComponent size="md" color="#5f5f5f" maxWidth="60ch">
+					{text}
+				</ParagrafComponent>
+
+				<ParagrafComponent size="md" color="#8d8d8d" maxWidth="60ch">
+					{textSecondary}
+				</ParagrafComponent>
+
+				<SocialMediaComponent items={socials} class="about__social" />
+			</div>
+		</div>
+	</div>
+</section>
+
+<style>
+	.about {
+		width: 100%;
+		background-color: #ffffff;
+		display: flex;
+		justify-content: center;
+		position: relative;
+		box-sizing: border-box;
+		padding-bottom: 60px;
+	}
+
+	.about__content {
+		width: 100%;
+		max-width: var(--max-page-width);
+		padding: clamp(3rem, 10vw, 6rem) 0px;
+		box-sizing: border-box;
+		display: grid;
+		grid-template-columns: minmax(0, 0.62fr) minmax(0, 1fr);
+		align-items: center;
+		gap: clamp(2rem, 5vw, 3.5rem);
+	}
+
+	.about__media {
+		margin: 0;
+	}
+
+	.about__image {
+		display: block;
+		width: 100%;
+		height: auto;
+		aspect-ratio: 4 / 5;
+		object-fit: cover;
+		object-position: center;
+	}
+
+	.about__text {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+
+	.about__title {
+		margin: 0 0 0.5rem;
+		font-size: var(--h2);
+		line-height: 1.1;
+		color: #2b0713;
+		max-width: 20ch;
+	}
+
+	/* Die Klasse landet auf dem <ul> der Component und trägt damit deren
+	   Scope-ID, nicht die der Section – deshalb :global(). */
+	.about :global(.about__social) {
+		margin-top: 1rem;
+	}
+
+	@media (max-width: 900px) {
+		.about__content {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.about__media {
+			max-width: 380px;
+		}
+
+		.about__title {
+			max-width: none;
+		}
+	}
+</style>

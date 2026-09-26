@@ -1,0 +1,173 @@
+---
+import GridCardComponent from "../../components/GridCardComponent.astro";
+import PriceCardComponent from "../../components/PriceCardComponent.astro";
+import ParagrafComponent from "../../components/ParagrafComponent.astro";
+import RampCurtainComponent from "../../components/RampCurtainComponent.astro";
+import { anchors } from "../../lib/site";
+import content from "./text.json";
+
+export interface Props {
+	subtitle?: string;
+	title?: string;
+	note?: string;
+}
+
+const {
+	subtitle = content.subtitle,
+	title = content.title,
+	note = content.note,
+}: Props = Astro.props;
+
+// Das Sprungziel des Buttons steht zentral in src/lib/site.ts.
+const { packages, ctaLabel } = content;
+const ctaHref = anchors.kontakt;
+---
+
+<script>
+	import { gsap } from "../../lib/gsap";
+
+	function init() {
+		// GSAP ist geladen – das Sicherheitsnetz im BaseLayout darf die
+		// Startzustände jetzt stehen lassen.
+		document.documentElement.setAttribute("data-animations-ready", "");
+		playCardReveal();
+	}
+
+	init();
+
+	/**
+	 * Die Paketkarten steigen nacheinander von unten ein, am Scrollstand
+	 * entlang – wie die Karten in "Was ich baue". Bei prefers-reduced-motion
+	 * läuft nichts: ohne .from() wird nie ein Startzustand gesetzt, die Karten
+	 * stehen dann einfach fertig da.
+	 */
+	function playCardReveal() {
+		const grid = document.querySelector<HTMLElement>(".pakete__cards");
+		const cards = grid?.querySelectorAll<HTMLElement>(".price-card");
+		if (!grid || !cards?.length) return;
+
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			return;
+		}
+
+		const cardTl = gsap.timeline({
+			scrollTrigger: {
+				trigger: grid,
+				start: "top 80%",
+				end: "bottom bottom",
+				scrub: 0.5,
+			},
+		});
+
+		/**
+		 * GSAP schreibt während des Tweens ein inline transform und setzt dabei
+		 * translate auf "none" – der Karten-Hover fährt aber genau über
+		 * translate und wäre damit tot. clearProps gibt die Karte am Ende ans
+		 * CSS zurück, das translate: none inklusive.
+		 */
+		const handOverToCss = () => gsap.set(cards, { clearProps: "transform,opacity" });
+
+		// Bei scrub zählen nur Verhältnisse, nicht Sekunden: stagger deutlich
+		// kleiner als duration halten, ease "none" gegen den Scrub.
+		cardTl.from(cards, {
+			opacity: 0,
+			y: "+=150px",
+			duration: 1,
+			stagger: 0.25,
+			ease: "none",
+			onComplete: handOverToCss,
+		});
+
+		// Puffer am Ende, damit die letzte Karte nicht erst am allerletzten
+		// Pixel der Scrollstrecke fertig ist.
+		cardTl.to({}, { duration: 0.75 });
+	}
+</script>
+
+<section class="pakete" id="preise">
+	{/* Die Curtain trägt die Farbe der folgenden Section – hier die graue FAQ. */}
+	<RampCurtainComponent color="var(--bg-grey)"></RampCurtainComponent>
+
+	<div class="inner-content-wrapper">
+		<div class="pakete__content">
+			<p class="subline">{subtitle}</p>
+			<h2 class="pakete__title">{title}</h2>
+
+			<GridCardComponent
+				class="pakete__cards"
+				columns={3}
+				columnsTablet={2}
+				columnsMobile={1}
+			>
+				{
+					packages.map((paket) => (
+						<PriceCardComponent
+							name={paket.name}
+							price={paket.price}
+							text={paket.text}
+							features={paket.features}
+							badge={"badge" in paket ? paket.badge : undefined}
+							ctaLabel={ctaLabel}
+							ctaHref={ctaHref}
+						/>
+					))
+				}
+			</GridCardComponent>
+
+			<ParagrafComponent size="xs" color="#8d8d8d" class="pakete__note">
+				{note}
+			</ParagrafComponent>
+		</div>
+	</div>
+</section>
+
+<style>
+	.pakete {
+		/* Der Header liegt fixiert darüber – ohne diesen Abstand verschwindet
+		   die Überschrift beim Sprung auf #preise darunter. */
+		scroll-margin-top: var(--header-height);
+		width: 100%;
+		background-color: #ffffff;
+		display: flex;
+		justify-content: center;
+		position: relative;
+		box-sizing: border-box;
+		/* Platz für die Curtain, damit sie nicht über den Inhalt läuft. */
+		padding-bottom: 60px;
+	}
+
+	.pakete__content {
+		width: 100%;
+		max-width: var(--max-page-width);
+		padding: clamp(3rem, 10vw, 6rem) 0px;
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+
+	.pakete__title {
+		margin: 0;
+		font-size: var(--h2);
+		line-height: 1.1;
+		color: #2b0713;
+		max-width: 16ch;
+	}
+
+	/* Beide Klassen sitzen auf dem Root-Element eines Childs und tragen dessen
+	   Scope-ID – deshalb :global(). */
+	.pakete :global(.pakete__cards) {
+		margin-top: clamp(2rem, 4vw, 3.5rem);
+	}
+
+	.pakete :global(.pakete__note) {
+		margin-top: clamp(1.5rem, 3vw, 2.5rem);
+	}
+
+	@media (max-width: 900px) {
+		.pakete__title {
+			max-width: none;
+		}
+	}
+</style>

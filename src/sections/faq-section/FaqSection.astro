@@ -1,0 +1,144 @@
+---
+import ParagrafComponent from "../../components/ParagrafComponent.astro";
+import AccordionComponent from "../../components/AccordionComponent.astro";
+import AccordionItemComponent from "../../components/AccordionItemComponent.astro";
+import RampCurtainComponent from "../../components/RampCurtainComponent.astro";
+import content from "./text.json";
+
+export interface Props {
+	subtitle?: string;
+	title?: string;
+	text?: string;
+}
+
+const {
+	subtitle = content.subtitle,
+	title = content.title,
+	text = content.text,
+}: Props = Astro.props;
+
+const { items } = content;
+---
+
+<script>
+	import { gsap } from "../../lib/gsap";
+
+	function init() {
+		// GSAP ist geladen – das Sicherheitsnetz im BaseLayout darf die
+		// Startzustände jetzt stehen lassen.
+		document.documentElement.setAttribute("data-animations-ready", "");
+		playAccordionReveal();
+	}
+
+	init();
+
+	/**
+	 * Der Fragenkasten blendet sich beim Hereinscrollen einmal sanft ein –
+	 * bewusst ohne scrub und ohne Versatz, damit die ausfahrenden Antworten
+	 * die einzige Bewegung in dieser Section bleiben.
+	 */
+	function playAccordionReveal() {
+		const box = document.querySelector<HTMLElement>(".faq__accordion");
+		if (!box) return;
+
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			return;
+		}
+
+		gsap.from(box, {
+			opacity: 0,
+			duration: 0.9,
+			ease: "power2.out",
+			scrollTrigger: {
+				trigger: box,
+				start: "top 85%",
+			},
+			// Deckkraft zurück ans CSS geben – GSAP ließe sonst ein inline
+			// opacity:1 stehen.
+			onComplete: () => gsap.set(box, { clearProps: "opacity" }),
+		});
+	}
+</script>
+
+<section class="faq bg-grey" id="faq">
+	{/* Die Curtain trägt die Farbe der folgenden Section – hier der weiße
+	    Kontaktbereich. */}
+	<RampCurtainComponent color="#fff"></RampCurtainComponent>
+
+	<div class="inner-content-wrapper">
+		<div class="faq__content">
+			<div class="faq__intro">
+				<p class="subline">{subtitle}</p>
+				<h2 class="faq__title">{title}</h2>
+
+				<ParagrafComponent size="md" color="#5f5f5f" maxWidth="38ch">
+					{text}
+				</ParagrafComponent>
+			</div>
+
+			<AccordionComponent class="faq__accordion">
+				{
+					items.map((item) => (
+						<AccordionItemComponent
+							question={item.question}
+							answer={item.answer}
+							open={"open" in item && item.open}
+						/>
+					))
+				}
+			</AccordionComponent>
+		</div>
+	</div>
+</section>
+
+<style>
+	.faq {
+		/* Der Header liegt fixiert darüber – ohne diesen Abstand verschwindet
+		   die Überschrift beim Sprung auf #faq darunter. */
+		scroll-margin-top: var(--header-height);
+		width: 100%;
+		display: flex;
+		justify-content: center;
+		position: relative;
+		box-sizing: border-box;
+		/* Platz für die Curtain, damit sie nicht über den Inhalt läuft. */
+		padding-bottom: 60px;
+	}
+
+	.faq__content {
+		width: 100%;
+		max-width: var(--max-page-width);
+		padding: clamp(3rem, 10vw, 6rem) 0px;
+		box-sizing: border-box;
+		display: grid;
+		grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr);
+		align-items: start;
+		gap: clamp(2rem, 5vw, 4rem);
+	}
+
+	.faq__intro {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+		padding-top: clamp(0rem, 2vw, 1.5rem);
+	}
+
+	.faq__title {
+		margin: 0 0 0.5rem;
+		font-size: var(--h2);
+		line-height: 1.1;
+		color: #2b0713;
+		max-width: 12ch;
+	}
+
+	@media (max-width: 900px) {
+		.faq__content {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.faq__title {
+			max-width: none;
+		}
+	}
+</style>

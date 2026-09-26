@@ -1,0 +1,28 @@
+{
+	"subtitle": "FAQ",
+	"title": "Häufige Fragen",
+	"text": "Steht deine Frage nicht dabei? Schreib mir — Antwort in der Regel am selben Tag.",
+	"items": [
+		{
+			"question": "Kann ich Inhalte später selbst ändern?",
+			"answer": "Ja. Texte und Bilder liegen in einfachen Dateien neben der Seite, die du direkt bearbeiten kannst. Wer lieber eine Oberfläche möchte, bekommt ein schlankes CMS dazu — das besprechen wir vorher, weil es den Aufbau beeinflusst."
+		},
+		{
+			"question": "Wie lange dauert ein Projekt?",
+			"answer": "Eine Landingpage zwei bis drei Wochen, eine vollständige Website vier bis sechs. Der größte Zeitfaktor sind erfahrungsgemäß Texte und Bilder von deiner Seite.",
+			"open": true
+		},
+		{
+			"question": "Warum nicht einfach WordPress?",
+			"answer": "Weil du dir damit Themes, Plugins und deren Updates einkaufst — und die Ladezeit gleich mit. Für eine Seite, die vor allem informieren und Anfragen bringen soll, ist das viel Technik für wenig Nutzen."
+		},
+		{
+			"question": "Was kostet der Betrieb im Monat?",
+			"answer": "Die Seite ist statisch und läuft auf Hosting ab etwa 0 bis 10 € im Monat. Dazu kommt nur die Domain. Wartungspauschalen gibt es bei mir nicht, Änderungen rechne ich nach Aufwand ab."
+		},
+		{
+			"question": "Übernimmst du auch bestehende Seiten?",
+			"answer": "Ja, wenn sich der Umbau lohnt. Ich schaue mir vorher an, was an Inhalten und Technik da ist, und sage dir ehrlich, ob ein Neuaufbau oder eine Überarbeitung günstiger kommt."
+		}
+	]
+}

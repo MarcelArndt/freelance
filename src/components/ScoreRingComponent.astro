@@ -1,0 +1,261 @@
+---
+export interface Props {
+	id?: string;
+	value?: number;
+	maxValue?: number;
+	label?: string;
+	size?: string;
+	/**
+	 * Ringstärke in viewBox-Einheiten: 100 entspricht dem Ringdurchmesser,
+	 * 12 also 12 % davon. Skaliert dadurch automatisch mit `size` mit.
+	 * Ein String wie "12px" wird als 12 gelesen.
+	 */
+	thickness?: number | string;
+	ringColor?: string;
+	trackColor?: string;
+	valueColor?: string;
+	valueSize?: string;
+	valueWeight?: string;
+	labelColor?: string;
+	labelSize?: string;
+	showValue?: boolean;
+	/** Ring füllt sich erst, wenn er in den Viewport scrollt. */
+	animateOnView?: boolean;
+	/** Dauer der Füllanimation in ms. */
+	duration?: number;
+	/** Verzögerung in ms – für gestaffelte Ringe. */
+	delay?: number;
+	easing?: string;
+	/** true = Animation läuft bei jedem erneuten Scrollen neu. */
+	repeat?: boolean;
+	/** Zahl in der Mitte zählt parallel zum Ring hoch. */
+	countUp?: boolean;
+	roundCaps?: boolean;
+	class?: string;
+}
+
+const {
+	id,
+	value = 0,
+	maxValue = 100,
+	label,
+	size = "7rem",
+	thickness = 12,
+	ringColor = "var(--lighthouse-green)",
+	trackColor = "color-mix(in srgb, var(--ink-1) 12%, transparent)",
+	valueColor = "var(--ink-1)",
+	valueSize = "1.75rem",
+	valueWeight = "400",
+	labelColor = "color-mix(in srgb, var(--ink-1) 70%, transparent)",
+	labelSize = "0.75rem",
+	showValue = true,
+	animateOnView = true,
+	duration = 1400,
+	delay = 0,
+	easing = "cubic-bezier(0.22, 1, 0.36, 1)",
+	repeat = false,
+	countUp = false,
+	roundCaps = false,
+	class: className,
+}: Props = Astro.props;
+
+const percent = Math.min(100, Math.max(0, (value / maxValue) * 100));
+
+// "12px" -> 12. Innerhalb der viewBox sind px und Nutzereinheiten identisch.
+const strokeWidth = Math.min(50, Math.max(0, parseFloat(String(thickness)) || 0));
+// Radius so wählen, dass der Strich exakt an der Außenkante endet und
+// nicht über den Kasten hinausläuft – unabhängig von der Ringstärke.
+const radius = 50 - strokeWidth / 2;
+
+const varStyle = [
+	`--size:${size}`,
+	`--thickness:${strokeWidth}px`,
+	`--ring-color:${ringColor}`,
+	`--track-color:${trackColor}`,
+	`--value-color:${valueColor}`,
+	`--value-size:${valueSize}`,
+	`--value-weight:${valueWeight}`,
+	`--label-color:${labelColor}`,
+	`--label-size:${labelSize}`,
+	`--percent:${percent}`,
+	`--duration:${duration}ms`,
+	`--delay:${delay}ms`,
+	`--easing:${easing}`,
+	`--line-cap:${roundCaps ? "round" : "butt"}`,
+].join(";");
+---
+
+<div
+	id={id}
+	class:list={["ring-wrapper", className]}
+	style={varStyle}
+	score-ring={animateOnView ? "" : null}
+	data-repeat={animateOnView && repeat ? "" : null}
+	data-count-up={animateOnView && countUp && showValue ? "" : null}
+	data-value={value}
+	data-duration={duration}
+	data-delay={delay}
+>
+	<div class="ring" role="img" aria-label={label ? `${label}: ${value}` : `${value}`}>
+		<svg class="ring__svg" viewBox="0 0 100 100" aria-hidden="true">
+			<circle class="ring__track" cx="50" cy="50" r={radius} pathLength="100"></circle>
+			<circle class="ring__arc" cx="50" cy="50" r={radius} pathLength="100"></circle>
+		</svg>
+		{showValue && <span class="ring__value">{value}</span>}
+	</div>
+	{label && <p class="ring__label">{label}</p>}
+</div>
+
+<script>
+	import { observeInView, nextFrame, readNumber } from "../utils/scripts/inView";
+
+	const rings = document.querySelectorAll<HTMLElement>("[score-ring]");
+	const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	const timers = new WeakMap<Element, number>();
+
+	function easeOutCubic(progress: number) {
+		return 1 - Math.pow(1 - progress, 3);
+	}
+
+	/** Zählt die Zahl in der Mitte synchron zum Ring hoch. */
+	function countUp(ring: Element) {
+		const output = ring.querySelector<HTMLElement>(".ring__value");
+		if (!output) return;
+
+		const target = readNumber(ring, "data-value");
+		const duration = readNumber(ring, "data-duration", 1400);
+		const delay = readNumber(ring, "data-delay");
+
+		if (reducedMotion) {
+			output.textContent = String(target);
+			return;
+		}
+
+		output.textContent = "0";
+		const start = performance.now() + delay;
+
+		const step = (now: number) => {
+			const progress = Math.min(1, Math.max(0, (now - start) / duration));
+			output.textContent = String(Math.round(easeOutCubic(progress) * target));
+			if (progress < 1) timers.set(ring, requestAnimationFrame(step));
+		};
+
+		timers.set(ring, requestAnimationFrame(step));
+	}
+
+	function reset(ring: Element) {
+		ring.classList.remove("is-filled");
+		const frame = timers.get(ring);
+		if (frame) cancelAnimationFrame(frame);
+		if (ring.hasAttribute("data-count-up")) {
+			const output = ring.querySelector<HTMLElement>(".ring__value");
+			if (output) output.textContent = "0";
+		}
+	}
+
+	observeInView(
+		rings,
+		(ring) =>
+			nextFrame(() => {
+				ring.classList.add("is-filled");
+				if (ring.hasAttribute("data-count-up")) countUp(ring);
+			}),
+		reset,
+		{ threshold: 0.4, repeat: Array.from(rings).some((ring) => ring.hasAttribute("data-repeat")) },
+	);
+</script>
+
+<style>
+	.ring-wrapper {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.ring {
+		position: relative;
+		width: var(--size);
+		height: var(--size);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.ring__svg {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		/* Startpunkt oben statt rechts. */
+		transform: rotate(-90deg);
+		overflow: visible;
+	}
+
+	.ring__track,
+	.ring__arc {
+		fill: none;
+		stroke-width: var(--thickness);
+		/* Kein vector-effect: non-scaling-stroke! Das würde das Strichmuster im
+		   Bildschirm-Koordinatensystem anlegen, während stroke-dasharray in
+		   viewBox-Einheiten rechnet – bei 100 % bliebe eine Lücke offen. */
+	}
+
+	.ring__track {
+		stroke: var(--track-color);
+	}
+
+	.ring__arc {
+		stroke: var(--ring-color);
+		stroke-linecap: var(--line-cap);
+		stroke-dasharray: 100;
+		/* Ohne Scroll-Animation (animateOnView={false}) direkt gefüllt. */
+		stroke-dashoffset: calc(100 - var(--percent));
+		transition: stroke-dashoffset var(--duration) var(--easing) var(--delay);
+	}
+
+	/* Startzustand: leer, bis der Ring in den Viewport scrollt. */
+	[score-ring] .ring__arc {
+		stroke-dashoffset: 100;
+	}
+
+	[score-ring].is-filled .ring__arc {
+		stroke-dashoffset: calc(100 - var(--percent));
+	}
+
+	/* Kein JavaScript: Ring bleibt sichtbar gefüllt statt leer. */
+	@media (scripting: none) {
+		[score-ring] .ring__arc {
+			stroke-dashoffset: calc(100 - var(--percent));
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.ring__arc {
+			transition-duration: 1ms;
+			transition-delay: 0ms;
+		}
+	}
+
+	.ring__value {
+		position: relative;
+		z-index: 1;
+		font-family: var(--font);
+		font-size: var(--value-size);
+		font-weight: var(--value-weight);
+		color: var(--value-color);
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.ring__label {
+		margin: 0;
+		font-family: var(--font);
+		font-size: var(--label-size);
+		font-weight: 400;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--label-color);
+		text-align: center;
+	}
+</style>

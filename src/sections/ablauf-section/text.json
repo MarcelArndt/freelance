@@ -1,0 +1,32 @@
+{
+	"subtitle": "Ablauf",
+	"title": "Von der Anfrage zum Livegang",
+	"text": "Fünf Schritte, klare Termine. Du weißt jederzeit, was als Nächstes passiert und was es kostet.",
+	"steps": [
+		{
+			"number": "01",
+			"title": "Erstgespräch",
+			"text": "30 Minuten Video-Call. Ziel, Inhalte, Budget — kostenlos und unverbindlich."
+		},
+		{
+			"number": "02",
+			"title": "Angebot & Umfang",
+			"text": "Fixpreis pro Paket, schriftlich, mit Terminplan. Keine Überraschungen."
+		},
+		{
+			"number": "03",
+			"title": "Design & Aufbau",
+			"text": "Erst Struktur, dann Gestaltung, dann Code. Du siehst Zwischenstände live."
+		},
+		{
+			"number": "04",
+			"title": "Feedback-Runde",
+			"text": "Zwei Korrekturrunden sind im Preis. Kommentare direkt an der Seite."
+		},
+		{
+			"number": "05",
+			"title": "Livegang & Übergabe",
+			"text": "Domain, SSL, Messung. Plus kurze Einweisung, wie du Inhalte selbst pflegst."
+		}
+	]
+}

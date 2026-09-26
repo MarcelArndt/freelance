@@ -1,0 +1,129 @@
+---
+import IconsComponent from "./IconsComponent.astro";
+import { socials } from "../lib/site";
+
+export interface Props {
+	items?: { label: string; href: string; icon: string }[];
+	/** "outline" = Ring auf hellem Grund, "solid" = gefüllter Kreis. */
+	variant?: "outline" | "solid";
+	/** Durchmesser des Kreises. */
+	size?: string;
+	/** Größe des SVG im Kreis – bewusst als eigener Wert, damit das Innenleben
+	    nicht am Kreis klebt und nicht darin verschwindet. */
+	iconSize?: string;
+	/** Grundfarbe von Ring und Icon. */
+	color?: string;
+	/** Farbe, die der Kreis beim Hover annimmt. */
+	hoverColor?: string;
+	class?: string;
+}
+
+const {
+	// Ohne items greifen die Profile aus src/lib/site.ts.
+	items = socials,
+	variant = "outline",
+	size = "46px",
+	iconSize = "24px",
+	color = "#2b0713",
+	hoverColor = "var(--accent)",
+	class: className,
+}: Props = Astro.props;
+
+// Wie in den anderen Components über einen inline zusammengebauten String,
+// nicht über define:vars – das hängt sonst am falschen Element.
+const varStyle = [
+	`--sm-size:${size}`,
+	`--sm-icon-size:${iconSize}`,
+	`--sm-color:${color}`,
+	`--sm-hover-bg:${hoverColor}`,
+].join(";");
+---
+
+<ul class:list={["social-media", `social-media--${variant}`, className]} style={varStyle}>
+	{
+		items.map((item) => {
+			// mailto und interne Sprungziele bleiben im selben Tab – sonst
+			// öffnet der Klick auf das Mail-Icon ein leeres Fenster, das sich
+			// sofort wieder schließt.
+			const external = /^https?:/.test(item.href);
+
+			return (
+				<li>
+					<a
+						class="social-media__link"
+						href={item.href}
+						target={external ? "_blank" : undefined}
+						rel={external ? "noopener noreferrer" : undefined}
+						aria-label={item.label}
+					>
+						<IconsComponent src={item.icon} size={iconSize} />
+					</a>
+				</li>
+			);
+		})
+	}
+</ul>
+
+<style>
+	.social-media {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	/* Die Varianten setzen nur Custom Properties auf der Liste, nicht direkt
+	   die Farben am Link. Sonst hätte `.social-media--outline .social-media__link`
+	   mehr Spezifität als `.social-media__link:hover` und der Hover käme nie
+	   gegen den transparenten Grund an – das Icon wäre weiß auf Weiß. */
+	.social-media--outline {
+		--sm-surface: transparent;
+		--sm-border: var(--sm-color);
+	}
+
+	.social-media--solid {
+		--sm-surface: #ffffff;
+		--sm-border: #ffffff;
+	}
+
+	.social-media__link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: var(--sm-size);
+		height: var(--sm-size);
+		box-sizing: border-box;
+		border-radius: 50%;
+		border: 1px solid var(--sm-border);
+		background-color: var(--sm-surface);
+		color: var(--sm-color);
+		/* `translate` statt `transform`, wie bei den Karten – so bleibt der
+		   Hover unabhängig von einem später ergänzten GSAP-Reveal. */
+		transition: translate 0.25s ease-in-out, background-color 0.25s ease-in-out,
+			border-color 0.25s ease-in-out, color 0.25s ease-in-out;
+	}
+
+	/* Der Hover dreht die Farben um: was dunkel war wird weiß, die weiße
+	   Fläche im Kreis wird zur Akzentfarbe. Dazu die 3px nach oben wie beim
+	   Button. */
+	.social-media__link:hover,
+	.social-media__link:focus-visible {
+		background-color: var(--sm-hover-bg);
+		border-color: #ffffff;
+		color: #ffffff;
+		translate: 0 -3px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.social-media__link {
+			transition-duration: 1ms;
+		}
+
+		.social-media__link:hover,
+		.social-media__link:focus-visible {
+			translate: none;
+		}
+	}
+</style>

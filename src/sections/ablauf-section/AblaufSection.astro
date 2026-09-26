@@ -1,0 +1,269 @@
+---
+import GridCardComponent from "../../components/GridCardComponent.astro";
+import ParagrafComponent from "../../components/ParagrafComponent.astro";
+import RampCurtainComponent from "../../components/RampCurtainComponent.astro";
+import content from "./text.json";
+
+export interface Props {
+	subtitle?: string;
+	title?: string;
+	text?: string;
+}
+
+const {
+	subtitle = content.subtitle,
+	title = content.title,
+	text = content.text,
+}: Props = Astro.props;
+
+const { steps } = content;
+
+/**
+ * Die Hover-Farbe wandert über die Schritte von der Akzentfarbe ins Gelb:
+ * Schritt 1 ist voll --step-start, Schritt 5 voll --step-end, dazwischen
+ * mischt color-mix in oklab – dadurch läuft der Weg über Orange statt über
+ * ein ausgegrautes Braun, wie es bei sRGB passieren würde.
+ */
+const stepMix = (index: number) => 100 - (index * 100) / (steps.length - 1);
+---
+
+<script>
+	import { gsap } from "../../lib/gsap";
+
+	function init() {
+		// GSAP ist geladen – das Sicherheitsnetz im BaseLayout darf die
+		// Startzustände jetzt stehen lassen.
+		document.documentElement.setAttribute("data-animations-ready", "");
+		playStepReveal();
+	}
+
+	init();
+
+	/**
+	 * Die Schritte steigen nacheinander von unten ein, am Scrollstand entlang –
+	 * wie die Karten in "Was ich baue". Bei prefers-reduced-motion läuft nichts:
+	 * ohne .from() wird nie ein Startzustand gesetzt, die Schritte stehen dann
+	 * einfach fertig da.
+	 */
+	function playStepReveal() {
+		const grid = document.querySelector<HTMLElement>(".flow__steps");
+		const steps = grid?.querySelectorAll<HTMLElement>(".step");
+		if (!grid || !steps?.length) return;
+
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			return;
+		}
+
+		const stepTl = gsap.timeline({
+			scrollTrigger: {
+				trigger: grid,
+				start: "top 80%",
+				end: "bottom bottom",
+				scrub: 0.5,
+			},
+		});
+
+		/**
+		 * GSAP schreibt während des Tweens ein inline transform und setzt dabei
+		 * translate auf "none" – der Hover fährt aber genau über translate und
+		 * wäre damit tot. clearProps gibt den Schritt am Ende ans CSS zurück,
+		 * das translate: none inklusive.
+		 */
+		const handOverToCss = () => gsap.set(steps, { clearProps: "transform,opacity" });
+
+		// Bei scrub zählen nur Verhältnisse, nicht Sekunden: die Timeline wird
+		// auf die Scrollstrecke gestreckt. stagger deshalb deutlich kleiner als
+		// duration halten und ease "none", damit die Kurve nicht gegenarbeitet.
+		stepTl.from(steps, {
+			opacity: 0,
+			y: "+=150px",
+			duration: 1,
+			stagger: 0.2,
+			ease: "none",
+			onComplete: handOverToCss,
+		});
+
+		// Puffer am Ende, damit der letzte Schritt nicht erst am allerletzten
+		// Pixel der Scrollstrecke fertig ist.
+		stepTl.to({}, { duration: 0.75 });
+	}
+</script>
+
+<section class="flow">
+	{/* Die Curtain trägt immer die Farbe der folgenden Section – hier die
+	    weißen Pakete. */}
+	<RampCurtainComponent color="#fff"></RampCurtainComponent>
+
+	<div class="inner-content-wrapper">
+		<div class="flow__glow red__glow "></div>
+		<div class="flow__glow yellow__glow "></div>
+		<div class="flow__content">
+			<p class="subline">{subtitle}</p>
+			<h2 class="flow__title">{title}</h2>
+
+			<ParagrafComponent size="md" color="rgba(255, 255, 255, 0.7)" maxWidth="50ch">
+				{text}
+			</ParagrafComponent>
+
+			<GridCardComponent
+				class="flow__steps"
+				columns={5}
+				columnsTablet={3}
+				columnsMobile={1}
+				align="start"
+			>
+				{
+					steps.map((step, index) => (
+						<article
+							class="step"
+							style={`--step-color:color-mix(in oklab, var(--step-start) ${stepMix(index)}%, var(--step-end))`}
+						>
+							<span class="step__number">{step.number}</span>
+							<h3 class="step__title">{step.title}</h3>
+							<ParagrafComponent size="sm" color="rgba(255, 255, 255, 0.68)">
+								{step.text}
+							</ParagrafComponent>
+						</article>
+					))
+				}
+			</GridCardComponent>
+		</div>
+	</div>
+</section>
+
+<style>
+	.flow {
+		--step-start: var(--accent);
+		--step-end: #ffc93c;
+		--step-line: rgba(255, 255, 255, 0.18);
+		--step-muted: rgba(255, 255, 255, 0.42);
+		width: 100%;
+		background-color: var(--bg-dark);
+		display: flex;
+		justify-content: center;
+		position: relative;
+		overflow: hidden;
+		box-sizing: border-box;
+		/* Platz für die Curtain, damit sie nicht über den Inhalt läuft. */
+		padding-bottom: 60px;
+	}
+
+	.red__glow {
+		top: 50%;
+		right: -20%;
+		translate: 0 -50%;
+		width: 520px;
+		height: 520px;
+		background: radial-gradient(
+			closest-side,
+			color-mix(in srgb, var(--accent) 15%, transparent),
+			transparent
+		);
+	}
+
+	.flow__glow{
+		position: absolute;
+		z-index: 0;
+		pointer-events: none;
+		border-radius: 50%;
+		aspect-ratio:  1 / 1;
+		display: flex;
+		flex-shrink: 0;
+	}
+
+	.yellow__glow {
+		bottom: -35%;
+		left: -25%;
+		width: 800px;
+		height: 800px;;
+		background: radial-gradient(
+			closest-side,
+			color-mix(in srgb, #d26338 12%, transparent),
+			transparent
+		);
+	}
+
+	.flow__content {
+		position: relative;
+		z-index: 1;
+		width: 100%;
+		max-width: var(--max-page-width);
+		padding: clamp(3rem, 10vw, 6rem) 0px;
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+
+	.flow__title {
+		margin: 0;
+		font-size: var(--h2);
+		line-height: 1.1;
+		color: #ffffff;
+		max-width: 16ch;
+	}
+
+	.flow :global(.flow__steps) {
+		margin-top: clamp(2rem, 4vw, 3.5rem);
+	}
+
+	.step {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.75rem;
+		box-sizing: border-box;
+		padding-top: 1.25rem;
+		border-top: 1px solid var(--step-line);
+		/* `translate` statt `transform`, damit ein späteres GSAP-Reveal den
+		   Hover nicht aushebelt – wie bei den Karten. */
+		transition: translate 0.25s ease-in-out, border-color 0.25s ease-in-out;
+	}
+
+	/* Im Ruhezustand sind alle Schritte grau – die Farbe ist reiner
+	   Hover-State. */
+	.step:hover {
+		border-top-color: var(--step-color);
+		translate: 0 -3px;
+	}
+
+	.step:hover .step__number {
+		color: var(--step-color);
+	}
+
+	.step__number {
+		font-family: var(--headline);
+		font-size: 1.5rem;
+		font-weight: 700;
+		line-height: 1;
+		color: var(--step-muted);
+		transition: color 0.25s ease-in-out;
+	}
+
+	.step__title {
+		margin: 0;
+		font-family: var(--font);
+		font-size: 1.05rem;
+		font-weight: 600;
+		line-height: 1.3;
+		color: #ffffff;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.step,
+		.step__number {
+			transition-duration: 1ms;
+		}
+
+		.step:hover {
+			translate: none;
+		}
+	}
+
+	@media (max-width: 900px) {
+		.flow__title {
+			max-width: none;
+		}
+	}
+</style>

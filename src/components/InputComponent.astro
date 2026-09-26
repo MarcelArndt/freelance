@@ -1,0 +1,161 @@
+---
+/**
+ * Eingabefeld mit Label, Zustand und Fehlerzeile.
+ *
+ * Die Prüfung selbst macht `FormValidator` (src/utils/scripts/validation.ts).
+ * Diese Component liefert nur das Markup dafür: `[data-field]` als Container,
+ * `data-validate` am Control, `[data-field-error]` für die Meldung. Die Farbe
+ * des Unterstrichs hängt am `data-state` des Containers.
+ */
+export interface Props {
+	name: string;
+	label?: string;
+	type?: "text" | "email" | "tel" | "url" | "textarea";
+	placeholder?: string;
+	value?: string;
+	/** Regelliste für den Validator, z.B. "required email". */
+	validate?: string;
+	minLength?: number;
+	maxLength?: number;
+	rows?: number;
+	autocomplete?: string;
+	/** "line" = nur Unterstrich, "box" = Rahmen ringsum (Standard beim Textarea). */
+	variant?: "line" | "box";
+	id?: string;
+	class?: string;
+}
+
+const {
+	name,
+	label,
+	type = "text",
+	placeholder,
+	value,
+	validate,
+	minLength,
+	maxLength,
+	rows = 5,
+	autocomplete,
+	variant,
+	id = `field-${name}`,
+	class: className,
+}: Props = Astro.props;
+
+const isTextarea = type === "textarea";
+const Tag = isTextarea ? "textarea" : "input";
+// Das Textarea ist im Layout ein Kasten, die einzeiligen Felder sind Linien.
+const style = variant ?? (isTextarea ? "box" : "line");
+
+// Beim Textarea steht der Wert im Inhalt, beim Input im value-Attribut.
+const controlProps = {
+	id,
+	name,
+	placeholder,
+	autocomplete,
+	"data-validate": validate,
+	"data-min-length": minLength,
+	"data-max-length": maxLength,
+	...(isTextarea ? { rows } : { type, value }),
+};
+---
+
+<div class:list={["field", `field--${style}`, className]} data-field>
+	{
+		label && (
+			<label class="field__label" for={id}>
+				{label}
+			</label>
+		)
+	}
+
+	<Tag class="field__control" {...controlProps}>{isTextarea ? value : null}</Tag>
+
+	{/* aria-live, damit Screenreader die Meldung beim Verlassen des Feldes
+	    mitbekommen – der Text kommt erst per JavaScript hinein. Bewusst
+	    "polite" statt role="alert", sonst unterbricht jede Meldung sofort. */}
+	<p class="field__error" data-field-error aria-live="polite"></p>
+</div>
+
+<style>
+	.field {
+		--field-line: var(--line-color-darker);
+		--field-label: var(--ink-4);
+		--field-text: var(--ink-6);
+		--field-placeholder: var(--ink-3);
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		width: 100%;
+	}
+
+	/* Die Zustände setzen nur die Linienfarbe – valide grün, ungültig rot. */
+	.field[data-state="valid"] {
+		--field-line: var(--accent-soft);
+	}
+
+	.field[data-state="invalid"] {
+		--field-line: var(--error-color);
+	}
+
+	.field__label {
+		font-family: var(--meta);
+		font-size: var(--p-xs);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--field-label);
+	}
+
+	.field__control {
+		resize: none;
+		font-family: var(--font);
+		font-size: var(--p-sm);
+		font-weight: 300;
+		color: var(--field-text);
+		background-color: transparent;
+		border: 0;
+		border-radius: 0;
+		box-sizing: border-box;
+		width: 100%;
+		padding: 0.5rem 0;
+		outline: none;
+		transition: border-color 0.25s ease-in-out;
+	}
+
+	.field--line .field__control {
+		border-bottom: var(--line-thicker) solid var(--field-line);
+	}
+
+	/* Beim Kasten übernimmt der umlaufende Rahmen die Rolle des Unterstrichs –
+	   bewusst gleichmäßig dick, ein kräftigerer Boden sähe nach Fehler aus. */
+	.field--box .field__control {
+		border: var(--line-thickness) solid var(--field-line);
+		padding: 0.75rem 1rem;
+		min-height: 8rem;
+		line-height: 1.5;
+	}
+
+	.field__control::placeholder {
+		color: var(--field-placeholder);
+		opacity: 1;
+	}
+
+	.field__control:focus-visible {
+		border-color: var(--accent);
+	}
+
+	/* Nimmt keine Höhe weg, solange kein Fehler dasteht. */
+	.field__error {
+		margin: 0;
+		min-height: 1.2em;
+		font-family: var(--font);
+		font-size: var(--p-xs);
+		line-height: 1.2;
+		color: var(--error-color);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.field__control {
+			transition-duration: 1ms;
+		}
+	}
+</style>
